@@ -2,13 +2,11 @@
 #include <iostream>
 #include <print>
 
-#include <vulkan/vulkan.hpp>
-
 #include "triangle.hpp"
 
 int main(int argc, char** argv)
 {
-    app::Triangle program{};
+    app::Triangle program{800, 600};
     try
     {
         program.run();
