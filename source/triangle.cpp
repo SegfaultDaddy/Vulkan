@@ -358,6 +358,24 @@ namespace app
         }
     }
 
+    VkSurfaceFormatKHR Triangle::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
+    {
+        for(const auto& availableFormat : availableFormats)
+        {
+            if(availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && 
+               availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                return availableFormat;
+            }
+        }
+        return availableFormats[0];
+    }
+    
+    VkPresentModeKHR Triangle::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const
+    {
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
     SwapChainSupportDetails Triangle::query_swap_chain_support(VkPhysicalDevice device)
     {
         SwapChainSupportDetails details{};

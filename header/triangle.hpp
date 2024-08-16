@@ -38,7 +38,8 @@ namespace app
         void create_logical_device();
 
         void create_surface();
-
+        VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats) const; 
+        VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const; 
 
         GLFWwindow* window;
 
