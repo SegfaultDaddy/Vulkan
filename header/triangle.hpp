@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <string_view>
 #include <array>
-#include <vector>
 
 #include "utils.hpp"
 
@@ -33,11 +32,13 @@ namespace app
         void pick_physical_device();
         bool check_device_extension_support(VkPhysicalDevice device);
         bool is_device_suitable(VkPhysicalDevice device);
+        SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
         QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
 
         void create_logical_device();
 
         void create_surface();
+
 
         GLFWwindow* window;
 

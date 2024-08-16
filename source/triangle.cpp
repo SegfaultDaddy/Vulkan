@@ -240,7 +240,7 @@ namespace app
         {
             requiredExtensions.erase(extensions.extensionName);
         }
-        return requiredExtensions.empty();
+        return std::empty(requiredExtensions);
     }
 
     bool Triangle::is_device_suitable(VkPhysicalDevice device)
@@ -251,10 +251,21 @@ namespace app
         VkPhysicalDeviceFeatures deviceFeatures{};
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
+        auto extensionsSupported{check_device_extension_support(device)};
+
+        bool swapChainAdequate{false};
+
+        if(extensionsSupported)
+        {
+            auto swapChainDetails{query_swap_chain_support(device)};
+            swapChainAdequate = !std::empty(swapChainDetails.formats) && !std::empty(swapChainDetails.presentModes);
+        }
+        
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
                deviceFeatures.geometryShader &&
                find_queue_families(device).is_complete() &&
-               check_device_extension_support(device);
+               extensionsSupported &&
+               swapChainAdequate;
     }
 
     QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
@@ -345,5 +356,31 @@ namespace app
         {
             throw std::runtime_error{"Error: failed to create window surface."};
         }
+    }
+
+    SwapChainSupportDetails Triangle::query_swap_chain_support(VkPhysicalDevice device)
+    {
+        SwapChainSupportDetails details{};
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+        std::uint32_t formatCount{0};
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+        if(formatCount != 0)
+        {
+            details.formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, std::data(details.formats));
+        }
+
+        std::uint32_t presentModeCount{0};
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+        if(presentModeCount != 0)
+        {
+            details.presentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, std::data(details.presentModes));
+        }
+
+        return details;
     }
 } 
