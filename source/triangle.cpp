@@ -1,7 +1,8 @@
 #include <stdexcept>
 
-#include <vector>
 #include <print>
+#include <array>
+#include <vector>
 
 #include "triangle.hpp"
 
@@ -43,6 +44,11 @@ namespace app
 
     void Triangle::create_instance()
     {
+        if(enableValidationLayers && !check_validation_layer_support())
+        {
+            throw std::runtime_error{"Error: validation layers requested, but not available!"};
+        }
+
         VkApplicationInfo info{};
         info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         info.pApplicationName = "Vulkan";
@@ -60,7 +66,16 @@ namespace app
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
-        createInfo.enabledLayerCount = 0;
+
+        if(enableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<std::uint32_t>(std::size(validationLayers));
+            createInfo.ppEnabledLayerNames = std::data(validationLayers);
+        }
+        else
+        {
+            createInfo.enabledLayerCount = 0;
+        }
 
         if(VkResult result{vkCreateInstance(&createInfo, nullptr, &instance)}; 
            result != VK_SUCCESS)
@@ -82,5 +97,33 @@ namespace app
         {
             std::println("\t{}", extension.extensionName);
         }
+    }
+
+    bool Triangle::check_validation_layer_support()
+    {
+        std::uint32_t layersCount{0};
+        vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
+
+        std::vector<VkLayerProperties> availableLayers(layersCount);
+        vkEnumerateInstanceLayerProperties(&layersCount, std::data(availableLayers));
+        
+        for(const auto& layerName : validationLayers)
+        {
+            bool layerFound{false};
+            for(const auto& layerProperties : availableLayers)
+            {
+                if(std::string_view{layerName} == layerProperties.layerName)
+                {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if(!layerFound)
+            {
+                return false;
+            }
+        }
+        return true;
     }
 } 
