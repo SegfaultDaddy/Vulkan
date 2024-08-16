@@ -1,8 +1,6 @@
 #include <stdexcept>
 
 #include <print>
-#include <array>
-#include <vector>
 
 #include "triangle.hpp"
 
@@ -84,7 +82,7 @@ namespace app
         }
     }
 
-    void Triangle::show_extensions_support()
+    void Triangle::show_extensions_support() const
     {
         std::uint32_t extensionCount{0};
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -99,7 +97,7 @@ namespace app
         }
     }
 
-    bool Triangle::check_validation_layer_support()
+    bool Triangle::check_validation_layer_support() const
     {
         std::uint32_t layersCount{0};
         vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
@@ -125,5 +123,19 @@ namespace app
             }
         }
         return true;
+    }
+
+    std::vector<const char*> Triangle::required_extensions() const
+    {
+        std::uint32_t glfwExtensionCount{0};
+        const char** glfwExtensions{glfwGetRequiredInstanceExtensions(&glfwExtensionCount)};
+
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+        if(enableValidationLayers)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+
+        return extensions;
     }
 } 
