@@ -4,8 +4,11 @@
 #include <print>
 #include <ranges>
 #include <set>
+#include <algorithm>
 
 #include "triangle.hpp"
+
+#undef max
 
 namespace app
 {   
@@ -373,7 +376,36 @@ namespace app
     
     VkPresentModeKHR Triangle::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const
     {
+        for(const auto& availablePresentMode : availablePresentModes)
+        {
+            if(availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            {
+                return availablePresentMode;
+            }
+        }
+
         return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    VkExtent2D Triangle::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const
+    {
+        if(capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max())
+        {
+            return capabilities.currentExtent;
+        }
+
+        struct 
+        {
+            std::int32_t width;
+            std::int32_t height;
+        } size;
+        glfwGetFramebufferSize(window, &size.width, &size.height);
+
+        VkExtent2D actualExtent{static_cast<std::uint32_t>(size.width), 
+                                static_cast<std::uint32_t>(size.height)};
+        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.width = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        return actualExtent;
     }
 
     SwapChainSupportDetails Triangle::query_swap_chain_support(VkPhysicalDevice device)

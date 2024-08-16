@@ -40,6 +40,7 @@ namespace app
         void create_surface();
         VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats) const; 
         VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const; 
+        VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
         GLFWwindow* window;
 
