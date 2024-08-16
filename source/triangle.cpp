@@ -168,5 +168,10 @@ namespace app
                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = &debug_callback;
         createInfo.pUserData = nullptr;
+
+        if(create_debug_utils_messanger_ext(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to set up debug messanger."};
+        }
     }
 } 
