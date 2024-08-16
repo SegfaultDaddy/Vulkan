@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string_view>
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 namespace app
@@ -15,7 +16,13 @@ namespace app
         ~Triangle();
         void run();
     private:
+        void create_instance();
+        void create_window(const std::uint32_t width, const std::uint32_t height, const std::string_view name);
+        void show_extensions_support();
+
         GLFWwindow* window;
+
+        VkInstance instance;
     };
 }
 
