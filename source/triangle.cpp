@@ -203,10 +203,12 @@ namespace app
     {
         std::uint32_t deviceCount{0};
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+
         if(deviceCount == 0)
         {
             throw std::runtime_error{"failed to find GPUs with Vulkan support"};
         }
+
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
 
@@ -315,7 +317,8 @@ namespace app
         createInfo.queueCreateInfoCount = std::size(queueCreateInfos);
         createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
         createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = 0;
+        createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(deviceExtensions));
+        createInfo.ppEnabledExtensionNames = std::data(deviceExtensions);
 
         if(enableValidationLayers)
         {
