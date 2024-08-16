@@ -31,23 +31,34 @@ namespace app
         void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
         void pick_physical_device();
+        bool check_device_extension_support(VkPhysicalDevice device);
         bool is_device_suitable(VkPhysicalDevice device);
         QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
 
         void create_logical_device();
 
+        void create_surface();
+
         GLFWwindow* window;
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
+        VkSurfaceKHR surface;
         VkPhysicalDevice physicalDevice;
         VkDevice device;
         VkQueue graphicsQueue;
+        VkQueue presentQueue;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
+
         constexpr static std::array<const char*, 1> validationLayers
         {
             "VK_LAYER_KHRONOS_validation"
+        };
+
+        constexpr static std::array<const char*, 1> deviceExtensions
+        {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
         #ifdef NDEBUG

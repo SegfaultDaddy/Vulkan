@@ -3,6 +3,7 @@
 #include <iostream>
 #include <print>
 #include <ranges>
+#include <set>
 
 #include "triangle.hpp"
 
@@ -12,10 +13,10 @@ namespace app
         : physicalDevice{VK_NULL_HANDLE}
     {
         create_window(width, height, name);
-
         create_instance();
-        show_extensions_support();
+        //show_extensions_support();
         setup_debug_messages();
+        create_surface();
         pick_physical_device();
         create_logical_device();
     }
@@ -28,6 +29,7 @@ namespace app
             destroy_debug_utils_messenger_ext(instance, debugMessenger, nullptr);
         }
 
+        vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);
@@ -66,6 +68,7 @@ namespace app
         info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         info.apiVersion = VK_API_VERSION_1_0;
         info.pNext = nullptr;
+
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &info;
@@ -222,6 +225,22 @@ namespace app
         }
     }
 
+    bool Triangle::check_device_extension_support(VkPhysicalDevice device)
+    {
+        std::uint32_t extensionCount{0};
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, std::data(availableExtensions));
+
+        std::set<std::string_view> requiredExtensions(std::begin(deviceExtensions), std::end(deviceExtensions));
+        for(const auto& extensions : availableExtensions)
+        {
+            requiredExtensions.erase(extensions.extensionName);
+        }
+        return requiredExtensions.empty();
+    }
+
     bool Triangle::is_device_suitable(VkPhysicalDevice device)
     {
         VkPhysicalDeviceProperties deviceProperties{};
@@ -232,7 +251,8 @@ namespace app
 
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
                deviceFeatures.geometryShader &&
-               find_queue_families(device).is_complete();
+               find_queue_families(device).is_complete() &&
+               check_device_extension_support(device);
     }
 
     QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
@@ -252,6 +272,14 @@ namespace app
                 indices.graphicsFamily = i;
             }
 
+            VkBool32 presentSupport{false};
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+            if(presentSupport)
+            {
+                indices.presentFamily = i;
+            }
+
             if(indices.is_complete())
             {
                 break;
@@ -264,22 +292,29 @@ namespace app
     {
         auto indices{find_queue_families(physicalDevice)};
 
-        VkDeviceQueueCreateInfo queueCreateInfo{};
-        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-        queueCreateInfo.queueCount = 1;
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+
+        std::vector<std::uint32_t> uniqueQueueFamilies{indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         float queuePriority{1.0f};
-        queueCreateInfo.pQueuePriorities = &queuePriority;
+        for(const auto queueFamily : uniqueQueueFamilies)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+
+            queueCreateInfos.push_back(std::move(queueCreateInfo));
+        }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.pQueueCreateInfos = &queueCreateInfo;
-        createInfo.queueCreateInfoCount = 1;
+        createInfo.queueCreateInfoCount = std::size(queueCreateInfos);
+        createInfo.pQueueCreateInfos = std::data(queueCreateInfos);
         createInfo.pEnabledFeatures = &deviceFeatures;
-
         createInfo.enabledExtensionCount = 0;
 
         if(enableValidationLayers)
@@ -298,5 +333,14 @@ namespace app
         }
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    }
+
+    void Triangle::create_surface()
+    {
+        if(glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create window surface."};
+        }
     }
 } 

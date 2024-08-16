@@ -3,6 +3,7 @@
 
 #include <optional>
 
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -12,10 +13,11 @@ namespace app
     {
         inline bool is_complete() const
         {
-            return graphicsFamily.has_value();
+            return graphicsFamily.has_value() && presentFamily.has_value();
         }
 
         std::optional<std::uint32_t> graphicsFamily;
+        std::optional<std::uint32_t> presentFamily;
     };
     
     VkResult create_debug_utils_messanger_ext(VkInstance instance, 
