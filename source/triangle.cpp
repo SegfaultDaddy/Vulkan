@@ -6,13 +6,14 @@
 #include "triangle.hpp"
 
 namespace app
-{
-    Triangle::Triangle(const std::uint32_t width, const std::uint32_t height, const std::string_view name)
+{   
+    Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
     {
         create_window(width, height, name);
 
         create_instance();
         show_extensions_support();
+        setup_debug_messages();
     }
     
     Triangle::~Triangle()
@@ -38,7 +39,6 @@ namespace app
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(width, height, std::data(name), nullptr, nullptr);
-
     }
 
     void Triangle::create_instance()
@@ -50,7 +50,7 @@ namespace app
 
         VkApplicationInfo info{};
         info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        info.pApplicationName = "Vulkan";
+        info.pApplicationName = std::data(name);
         info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         info.pEngineName = "No Engine";
         info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -145,6 +145,28 @@ namespace app
                                                             void* userData)
     {
         std::println(std::cerr, "Validation layer: {}", callbackData->pMessage);
+        if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        {
+        }
         return VK_FALSE;
+    }
+
+    void Triangle::setup_debug_messages()
+    {
+        if(!enableValidationLayers)
+        {
+            return;
+        }
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | 
+                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                                    VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = &debug_callback;
+        createInfo.pUserData = nullptr;
     }
 } 

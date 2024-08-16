@@ -6,15 +6,14 @@
 #include <array>
 #include <vector>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "utils.hpp"
 
 namespace app
 {
-    class Triangle
+    class Triangle final
     {
     public:
-        Triangle(const std::uint32_t width, const std::uint32_t height, const std::string_view name = "Vulkan");
+        Triangle(const std::uint32_t width, const std::uint32_t height);
         ~Triangle();
         void run();
     private:
@@ -27,11 +26,13 @@ namespace app
                                                              VkDebugUtilsMessageSeverityFlagsEXT messageType,
                                                              const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                                              void* userData);
-
+        void setup_debug_messages();
         GLFWwindow* window;
 
         VkInstance instance;
-        
+        VkDebugUtilsMessengerEXT debugMessenger;
+
+        constexpr static std::string_view name{"Vulkan Triangle"};
         constexpr static std::array<const char*, 1> validationLayers
         {
             "VK_LAYER_KHRONOS_validation"
