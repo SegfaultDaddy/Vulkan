@@ -14,6 +14,7 @@ namespace app
         create_instance();
         show_extensions_support();
         setup_debug_messages();
+        pick_physical_device();
     }
     
     Triangle::~Triangle()
@@ -189,5 +190,38 @@ namespace app
                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = &debug_callback;
         createInfo.pUserData = nullptr;
+    }
+
+    void Triangle::pick_physical_device()
+    {
+        VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
+
+        std::uint32_t deviceCount{0};
+        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        if(deviceCount == 0)
+        {
+            throw std::runtime_error{"failed to find GPUs with Vulkan support"};
+        }
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(instance, &deviceCount, std::data(devices));
+
+        for(const auto& device : devices)
+        {
+            if(is_device_suitable(device))
+            {
+                physicalDevice = device;
+                break;
+            }
+        }
+
+        if(physicalDevice == VK_NULL_HANDLE)
+        {
+            throw std::runtime_error{"failed to find a suitable GPU"};
+        }
+    }
+
+    bool Triangle::is_device_suitable(VkPhysicalDevice device)
+    {
+        return true;
     }
 } 

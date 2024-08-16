@@ -28,6 +28,8 @@ namespace app
                                                              void* userData);
         void setup_debug_messages();
         void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        void pick_physical_device();
+        bool is_device_suitable(VkPhysicalDevice device);
 
         GLFWwindow* window;
 
