@@ -34,10 +34,15 @@ namespace app
         bool is_device_suitable(VkPhysicalDevice device);
         QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
 
+        void create_logical_device();
+
         GLFWwindow* window;
 
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
+        VkPhysicalDevice physicalDevice;
+        VkDevice device;
+        VkQueue graphicsQueue;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
         constexpr static std::array<const char*, 1> validationLayers

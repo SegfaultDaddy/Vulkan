@@ -9,6 +9,7 @@
 namespace app
 {   
     Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
+        : physicalDevice{VK_NULL_HANDLE}
     {
         create_window(width, height, name);
 
@@ -16,10 +17,12 @@ namespace app
         show_extensions_support();
         setup_debug_messages();
         pick_physical_device();
+        create_logical_device();
     }
     
     Triangle::~Triangle()
     {
+        vkDestroyDevice(device, nullptr);
         if(enableValidationLayers)
         {
             destroy_debug_utils_messenger_ext(instance, debugMessenger, nullptr);
@@ -195,8 +198,6 @@ namespace app
 
     void Triangle::pick_physical_device()
     {
-        VkPhysicalDevice physicalDevice{VK_NULL_HANDLE};
-
         std::uint32_t deviceCount{0};
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         if(deviceCount == 0)
@@ -250,11 +251,52 @@ namespace app
             {
                 indices.graphicsFamily = i;
             }
+
             if(indices.is_complete())
             {
                 break;
             }
         }
         return indices;
+    }
+
+    void Triangle::create_logical_device()
+    {
+        auto indices{find_queue_families(physicalDevice)};
+
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+
+        float queuePriority{1.0f};
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
+
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;
+
+        if(enableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<std::uint32_t>(std::size(validationLayers));
+            createInfo.ppEnabledLayerNames = std::data(validationLayers);
+        }
+        else
+        {
+            createInfo.enabledLayerCount = std::size(validationLayers);
+        }
+
+        if(vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create logical device."};
+        }
+
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     }
 } 
