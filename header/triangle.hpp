@@ -23,6 +23,10 @@ namespace app
         void show_extensions_support() const;
         bool check_validation_layer_support() const;
         std::vector<const char*> required_extensions() const;
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+                                                             VkDebugUtilsMessageSeverityFlagsEXT messageType,
+                                                             const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                             void* userData);
 
         GLFWwindow* window;
 

@@ -1,5 +1,6 @@
 #include <stdexcept>
 
+#include <iostream>
 #include <print>
 
 #include "triangle.hpp"
@@ -59,11 +60,10 @@ namespace app
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &info;
 
-        std::uint32_t glfwExtensionCount{0};
-        const char** glfwExtensions{glfwGetRequiredInstanceExtensions(&glfwExtensionCount)};
+        auto extensions{required_extensions()};
 
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
+        createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(extensions));
+        createInfo.ppEnabledExtensionNames = std::data(extensions);
 
         if(enableValidationLayers)
         {
@@ -137,5 +137,14 @@ namespace app
         }
 
         return extensions;
+    }
+
+    VKAPI_ATTR VkBool32 VKAPI_CALL Triangle::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+                                                            VkDebugUtilsMessageSeverityFlagsEXT messageType,
+                                                            const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                            void* userData)
+    {
+        std::println(std::cerr, "Validation layer: {}", callbackData->pMessage);
+        return VK_FALSE;
     }
 } 
