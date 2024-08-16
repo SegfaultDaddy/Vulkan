@@ -222,6 +222,26 @@ namespace app
 
     bool Triangle::is_device_suitable(VkPhysicalDevice device)
     {
-        return true;
+        VkPhysicalDeviceProperties deviceProperties{};
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+               deviceFeatures.geometryShader;
+    }
+
+    QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
+    {
+        QueueFamilyIndices indices{};
+
+        std::uint32_t queueFamilyCount{0};
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, std::data(queueFamilies));
+
+        return indices;
     }
 } 

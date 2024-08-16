@@ -20,6 +20,7 @@ namespace app
         void create_instance();
         void create_window(const std::uint32_t width, const std::uint32_t height, const std::string_view name);
         void show_extensions_support() const;
+
         bool check_validation_layer_support() const;
         std::vector<const char*> required_extensions() const;
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
@@ -28,8 +29,10 @@ namespace app
                                                              void* userData);
         void setup_debug_messages();
         void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
         void pick_physical_device();
         bool is_device_suitable(VkPhysicalDevice device);
+        QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
 
         GLFWwindow* window;
 
