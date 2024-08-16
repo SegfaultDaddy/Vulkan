@@ -18,6 +18,11 @@ namespace app
     
     Triangle::~Triangle()
     {
+        if(enableValidationLayers)
+        {
+            destroy_debug_utils_messenger_ext(instance, debugMessenger, nullptr);
+        }
+
         vkDestroyInstance(instance, nullptr);
 
         glfwDestroyWindow(window);

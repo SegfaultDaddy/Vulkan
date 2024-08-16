@@ -10,6 +10,9 @@ namespace app
                                               const VkDebugUtilsMessengerCreateInfoEXT* createInfo,
                                               const VkAllocationCallbacks* allocator,
                                               VkDebugUtilsMessengerEXT* debugMessanger);
+    void destroy_debug_utils_messenger_ext(VkInstance instance, 
+                                           VkDebugUtilsMessengerEXT debugMessanger,
+                                           const VkAllocationCallbacks* allocator);
 }
 
 #endif
