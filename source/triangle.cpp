@@ -70,14 +70,19 @@ namespace app
         createInfo.enabledExtensionCount = static_cast<std::uint32_t>(std::size(extensions));
         createInfo.ppEnabledExtensionNames = std::data(extensions);
 
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if(enableValidationLayers)
         {
             createInfo.enabledLayerCount = static_cast<std::uint32_t>(std::size(validationLayers));
             createInfo.ppEnabledLayerNames = std::data(validationLayers);
+
+            populate_debug_messenger_create_info(debugCreateInfo);
+            createInfo.pNext = static_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
         }
         else
         {
             createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
         }
 
         if(VkResult result{vkCreateInstance(&createInfo, nullptr, &instance)}; 
@@ -164,6 +169,17 @@ namespace app
         }
 
         VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+        populate_debug_messenger_create_info(createInfo);
+
+        if(create_debug_utils_messanger_ext(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to set up debug messanger."};
+        }
+    }
+
+    void Triangle::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    {
+        createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity =VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | 
                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -173,10 +189,5 @@ namespace app
                                  VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         createInfo.pfnUserCallback = &debug_callback;
         createInfo.pUserData = nullptr;
-
-        if(create_debug_utils_messanger_ext(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
-        {
-            throw std::runtime_error{"Error: failed to set up debug messanger."};
-        }
     }
 } 

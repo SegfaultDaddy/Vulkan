@@ -27,6 +27,8 @@ namespace app
                                                              const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                                              void* userData);
         void setup_debug_messages();
+        void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+
         GLFWwindow* window;
 
         VkInstance instance;
