@@ -10,6 +10,11 @@ namespace app
 {
     struct QueueFamilyIndices
     {
+        inline bool is_complete() const
+        {
+            return graphicsFamily.has_value();
+        }
+
         std::optional<std::uint32_t> graphicsFamily;
     };
     

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <print>
+#include <ranges>
 
 #include "triangle.hpp"
 
@@ -229,7 +230,8 @@ namespace app
         vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-               deviceFeatures.geometryShader;
+               deviceFeatures.geometryShader &&
+               find_queue_families(device).is_complete();
     }
 
     QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
@@ -242,6 +244,17 @@ namespace app
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, std::data(queueFamilies));
 
+        for(const auto& [i, queueFamily] : queueFamilies | std::views::enumerate)
+        {
+            if(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                indices.graphicsFamily = i;
+            }
+            if(indices.is_complete())
+            {
+                break;
+            }
+        }
         return indices;
     }
 } 
