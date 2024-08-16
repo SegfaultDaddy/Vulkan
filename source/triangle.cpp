@@ -22,6 +22,7 @@ namespace app
         create_surface();
         pick_physical_device();
         create_logical_device();
+        create_swap_chain();
     }
     
     Triangle::~Triangle()
@@ -432,5 +433,14 @@ namespace app
         }
 
         return details;
+    }
+
+    void Triangle::create_swap_chain()
+    {
+        auto swapChainSupport{query_swap_chain_support(physicalDevice)};
+
+        auto surfaceFormat{choose_swap_surface_format(swapChainSupport.formats)};
+        auto presentMode{choose_swap_present_mode(swapChainSupport.presentModes)};
+        auto extent{choose_swap_extent(swapChainSupport.capabilities)};
     }
 } 
