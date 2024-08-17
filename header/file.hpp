@@ -17,7 +17,7 @@ namespace file
             throw std::runtime_error{"Error: failed to open file."};
         }
 
-        std::size_t fileSize{in.tellg()};
+        std::size_t fileSize{static_cast<std::size_t>(in.tellg())};
         std::vector<char> buffer(fileSize);
 
         in.seekg(0);

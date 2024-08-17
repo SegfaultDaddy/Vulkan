@@ -532,6 +532,7 @@ namespace app
 
     void Triangle::create_graphics_pipeline()
     {
-
+        auto vertexShaderCode{file::read_file("../shader/vert.spv")};
+        auto fragmetShaderCode{file::read_file("../shader/frag.spv")};
     }
 } 
