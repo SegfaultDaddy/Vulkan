@@ -538,6 +538,20 @@ namespace app
         auto vertexShaderModule{create_shader_module(vertexShaderCode)};
         auto fragmentShaderModule{create_shader_module(fragmentShaderCode)};
 
+        VkPipelineShaderStageCreateInfo vertexShaderCreateInfo{};
+        vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertexShaderCreateInfo.module = vertexShaderModule;
+        vertexShaderCreateInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo fragmentShaderCreateInfo{};
+        fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        fragmentShaderCreateInfo.module = fragmentShaderModule;
+        fragmentShaderCreateInfo.pName = "main";
+
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStructs{vertexShaderCreateInfo, fragmentShaderCreateInfo};
+
         vkDestroyShaderModule(device, vertexShaderModule, nullptr);
         vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
     }
