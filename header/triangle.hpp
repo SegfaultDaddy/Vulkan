@@ -66,6 +66,7 @@ namespace app
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImagesViews;
+        VkPipelineLayout pipelineLayout;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 
