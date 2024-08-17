@@ -49,6 +49,8 @@ namespace app
         void create_graphics_pipeline();
         VkShaderModule create_shader_module(const std::vector<char>& code);
 
+        void create_render_pass();
+
         GLFWwindow* window;
 
         VkInstance instance;
@@ -66,6 +68,7 @@ namespace app
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImagesViews;
+        VkRenderPass renderPass;
         VkPipelineLayout pipelineLayout;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
