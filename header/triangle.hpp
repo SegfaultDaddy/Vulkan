@@ -52,6 +52,7 @@ namespace app
         VkDevice device;
         VkQueue graphicsQueue;
         VkQueue presentQueue;
+        VkSwapchainKHR swapChain;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 
