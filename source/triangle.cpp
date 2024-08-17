@@ -599,7 +599,7 @@ namespace app
         viewport.x = 0.0f; 
         viewport.y = 0.0f; 
         viewport.width = static_cast<float>(swapChainExtent.width); 
-        viewport.height = static_cast<float>(swapChainExtent.width); 
+        viewport.height = static_cast<float>(swapChainExtent.height); 
         viewport.maxDepth = 0.0f; 
         viewport.maxDepth = 1.0f; 
 
@@ -842,7 +842,7 @@ namespace app
         viewport.x = 0.0f; 
         viewport.y = 0.0f; 
         viewport.width = static_cast<float>(swapChainExtent.width); 
-        viewport.height = static_cast<float>(swapChainExtent.width); 
+        viewport.height = static_cast<float>(swapChainExtent.height); 
         viewport.maxDepth = 0.0f; 
         viewport.maxDepth = 1.0f; 
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
