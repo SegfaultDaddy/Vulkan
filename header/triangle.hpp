@@ -48,11 +48,17 @@ namespace app
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
         VkSurfaceKHR surface;
+        
         VkPhysicalDevice physicalDevice;
         VkDevice device;
+
         VkQueue graphicsQueue;
         VkQueue presentQueue;
+
         VkSwapchainKHR swapChain;
+        std::vector<VkImage> swapChainImages;
+        VkFormat swapChainImageFormat;
+        VkExtent2D swapChainExtent;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 

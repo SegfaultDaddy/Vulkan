@@ -485,5 +485,9 @@ namespace app
         {
             throw std::runtime_error{"Error: failed to create swap chain."};
         }
+
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+        swapChainImages.resize(imageCount);
+        vkGetSwapchainImagesKHR(device, swapChain, &imageCount, std::data(swapChainImages));
     }
 } 
