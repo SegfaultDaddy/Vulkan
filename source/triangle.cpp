@@ -28,10 +28,12 @@ namespace app
         create_render_pass();
         create_graphics_pipeline();
         create_frame_buffer();
+        create_command_pool();
     }
     
     Triangle::~Triangle()
     {
+        vkDestroyCommandPool(device, commandPool, nullptr);
         for(auto framebuffer : swapChainFrameBuffers)
         {
             vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -759,6 +761,21 @@ namespace app
             {
                 throw std::runtime_error{"Error: failed to create framebuffer."};
             }
+        }
+    }
+
+    void Triangle::create_command_pool()
+    {
+        auto queueFamilyIndices{find_queue_families(physicalDevice)};
+
+        VkCommandPoolCreateInfo commandPoolCreateInfo{};
+        commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+        if(vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool))
+        {
+            throw std::runtime_error{"Error: failed to create command pool."};
         }
     }
 } 
