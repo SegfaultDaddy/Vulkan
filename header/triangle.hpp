@@ -70,6 +70,7 @@ namespace app
         std::vector<VkImageView> swapChainImagesViews;
         VkRenderPass renderPass;
         VkPipelineLayout pipelineLayout;
+        VkPipeline graphicsPipeline;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 
