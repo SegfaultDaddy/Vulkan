@@ -47,6 +47,7 @@ namespace app
         void create_image_views();
         
         void create_graphics_pipeline();
+        VkShaderModule create_shader_module(const std::vector<char>& code);
 
         GLFWwindow* window;
 

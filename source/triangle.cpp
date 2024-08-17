@@ -535,4 +535,21 @@ namespace app
         auto vertexShaderCode{file::read_file("../shader/vert.spv")};
         auto fragmetShaderCode{file::read_file("../shader/frag.spv")};
     }
+
+    VkShaderModule Triangle::create_shader_module(const std::vector<char>& code)
+    {
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = std::size(code);
+        createInfo.pCode = reinterpret_cast<const std::uint32_t*>(std::data(code));
+
+        VkShaderModule shaderModule{};
+
+        if(vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create shader module."};
+        }
+
+        return shaderModule;
+    }
 } 
