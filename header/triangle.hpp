@@ -42,6 +42,8 @@ namespace app
         VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const; 
         VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const;
         void create_swap_chain();
+        
+        void create_image_views();
 
         GLFWwindow* window;
 
@@ -59,6 +61,7 @@ namespace app
         std::vector<VkImage> swapChainImages;
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
+        std::vector<VkImageView> swapChainImagesViews;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 
