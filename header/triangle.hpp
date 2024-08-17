@@ -51,6 +51,8 @@ namespace app
 
         void create_render_pass();
 
+        void create_frame_buffer();
+
         GLFWwindow* window;
 
         VkInstance instance;
@@ -71,6 +73,8 @@ namespace app
         VkRenderPass renderPass;
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
+
+        std::vector<VkFramebuffer> swapChainFrameBuffers;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 

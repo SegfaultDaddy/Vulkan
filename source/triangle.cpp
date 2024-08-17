@@ -27,10 +27,16 @@ namespace app
         create_image_views();
         create_render_pass();
         create_graphics_pipeline();
+        create_frame_buffer();
     }
     
     Triangle::~Triangle()
     {
+        for(auto framebuffer : swapChainFrameBuffers)
+        {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
@@ -730,6 +736,29 @@ namespace app
         if(vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to create render pass."};
+        }
+    }
+
+    void Triangle::create_frame_buffer()
+    {
+        swapChainFrameBuffers.resize(std::size(swapChainImagesViews));
+        for(const auto i : std::views::iota(0ull, std::size(swapChainImagesViews)))
+        {
+            std::vector<VkImageView> attachments{swapChainImagesViews[i]};
+
+            VkFramebufferCreateInfo frameBufferInfo{};
+            frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            frameBufferInfo.renderPass = renderPass;
+            frameBufferInfo.attachmentCount = 1;
+            frameBufferInfo.pAttachments = std::data(attachments);
+            frameBufferInfo.width = swapChainExtent.width;
+            frameBufferInfo.height = swapChainExtent.height;
+            frameBufferInfo.layers = 1;
+
+            if(vkCreateFramebuffer(device, &frameBufferInfo, nullptr, &swapChainFrameBuffers[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error{"Error: failed to create framebuffer."};
+            }
         }
     }
 } 
