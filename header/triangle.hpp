@@ -56,6 +56,9 @@ namespace app
         void create_command_pool();
         void create_command_buffer();
         void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
+        void create_sync_objects();
+
+        void draw_frame();
 
         GLFWwindow* window;
 
@@ -81,6 +84,10 @@ namespace app
 
         VkCommandPool commandPool;
         VkCommandBuffer commandBuffer;
+
+        VkSemaphore imageAvailableSemaphore;
+        VkSemaphore renderFinishedSemaphore;
+        VkFence inFlightFence;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 
