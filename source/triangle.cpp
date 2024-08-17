@@ -6,6 +6,7 @@
 #include <set>
 #include <algorithm>
 
+#include "file.hpp"
 #include "triangle.hpp"
 
 #undef max
