@@ -533,7 +533,13 @@ namespace app
     void Triangle::create_graphics_pipeline()
     {
         auto vertexShaderCode{file::read_file("../shader/vert.spv")};
-        auto fragmetShaderCode{file::read_file("../shader/frag.spv")};
+        auto fragmentShaderCode{file::read_file("../shader/frag.spv")};
+
+        auto vertexShaderModule{create_shader_module(vertexShaderCode)};
+        auto fragmentShaderModule{create_shader_module(fragmentShaderCode)};
+
+        vkDestroyShaderModule(device, vertexShaderModule, nullptr);
+        vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
     }
 
     VkShaderModule Triangle::create_shader_module(const std::vector<char>& code)
