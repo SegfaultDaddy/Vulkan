@@ -24,6 +24,7 @@ namespace app
         create_logical_device();
         create_swap_chain();
         create_image_views();
+        create_graphics_pipeline();
     }
     
     Triangle::~Triangle()
@@ -526,5 +527,10 @@ namespace app
                 throw std::runtime_error{"Error: failed create image views."};
             }
         }
+    }
+
+    void Triangle::create_graphics_pipeline()
+    {
+
     }
 } 
