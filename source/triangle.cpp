@@ -553,7 +553,7 @@ namespace app
 
         VkPipelineShaderStageCreateInfo fragmentShaderCreateInfo{};
         fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         fragmentShaderCreateInfo.module = fragmentShaderModule;
         fragmentShaderCreateInfo.pName = "main";
 
