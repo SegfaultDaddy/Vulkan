@@ -55,6 +55,7 @@ namespace app
 
         void create_command_pool();
         void create_command_buffer();
+        void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
 
         GLFWwindow* window;
 
