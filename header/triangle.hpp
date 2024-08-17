@@ -54,6 +54,7 @@ namespace app
         void create_frame_buffer();
 
         void create_command_pool();
+        void create_command_buffer();
 
         GLFWwindow* window;
 
@@ -78,6 +79,7 @@ namespace app
         std::vector<VkFramebuffer> swapChainFrameBuffers;
 
         VkCommandPool commandPool;
+        VkCommandBuffer commandBuffer;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
 

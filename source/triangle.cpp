@@ -29,6 +29,7 @@ namespace app
         create_graphics_pipeline();
         create_frame_buffer();
         create_command_pool();
+        create_command_buffer();
     }
     
     Triangle::~Triangle()
@@ -776,6 +777,20 @@ namespace app
         if(vkCreateCommandPool(device, &commandPoolCreateInfo, nullptr, &commandPool))
         {
             throw std::runtime_error{"Error: failed to create command pool."};
+        }
+    }
+
+    void Triangle::create_command_buffer()
+    {
+        VkCommandBufferAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocateInfo.commandPool = commandPool;
+        allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocateInfo.commandBufferCount = 1;
+
+        if(vkAllocateCommandBuffers(device, nullptr, &commandBuffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to allocate command buffer."};
         }
     }
 } 
