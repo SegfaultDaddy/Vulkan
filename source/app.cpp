@@ -6,9 +6,9 @@
 
 int main(int argc, char** argv)
 {
-    app::Triangle program{800, 600};
     try
     {
+        app::Triangle program{800, 600};
         program.run();
     }
     catch(const std::exception& e)

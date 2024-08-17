@@ -550,7 +550,26 @@ namespace app
         fragmentShaderCreateInfo.module = fragmentShaderModule;
         fragmentShaderCreateInfo.pName = "main";
 
-        std::vector<VkPipelineShaderStageCreateInfo> shaderStructs{vertexShaderCreateInfo, fragmentShaderCreateInfo};
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages{vertexShaderCreateInfo, fragmentShaderCreateInfo};
+
+        std::vector<VkDynamicState> dynamicStates{VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+
+        VkPipelineDynamicStateCreateInfo dynamicState{};
+        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicState.dynamicStateCount = static_cast<std::uint32_t>(std::size(dynamicStates));
+        dynamicState.pDynamicStates = std::data(dynamicStates);
+
+        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertexInputInfo.vertexBindingDescriptionCount = 0;
+        vertexInputInfo.pVertexBindingDescriptions = nullptr;
+        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+        VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+        inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        inputAssembly.primitiveRestartEnable = VK_FALSE;
 
         vkDestroyShaderModule(device, vertexShaderModule, nullptr);
         vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
