@@ -14,7 +14,7 @@
 namespace app
 {   
     Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
-        : physicalDevice{VK_NULL_HANDLE}
+        : physicalDevice{VK_NULL_HANDLE}, currentFrame{0}
     {
         create_window(width, height, name);
         create_instance();
@@ -29,32 +29,26 @@ namespace app
         create_graphics_pipeline();
         create_frame_buffer();
         create_command_pool();
-        create_command_buffer();
+        create_command_buffers();
         create_sync_objects();
     }
     
     Triangle::~Triangle()
     {
-        vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-        vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-        vkDestroyFence(device, inFlightFence, nullptr);
-
-        vkDestroyCommandPool(device, commandPool, nullptr);
-        for(auto framebuffer : swapChainFrameBuffers)
+        cleanup_swap_chain();
+        for(const auto i : std::views::iota(0, maxFramesInFlight))
         {
-            vkDestroyFramebuffer(device, framebuffer, nullptr);
+            vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+            vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+            vkDestroyFence(device, inFlightFences[i], nullptr);
         }
 
         vkDestroyPipeline(device, graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
         vkDestroyRenderPass(device, renderPass, nullptr);
 
-        for(auto imageView : swapChainImagesViews)
-        {
-            vkDestroyImageView(device, imageView, nullptr);
-        }
-
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
+        vkDestroyCommandPool(device, commandPool, nullptr);
         vkDestroyDevice(device, nullptr);
 
         if(enableValidationLayers)
@@ -432,6 +426,7 @@ namespace app
             std::int32_t width;
             std::int32_t height;
         } size;
+
         glfwGetFramebufferSize(window, &size.width, &size.height);
 
         VkExtent2D actualExtent{static_cast<std::uint32_t>(size.width), 
@@ -523,6 +518,33 @@ namespace app
 
         swapChainImageFormat = surfaceFormat.format;
         swapChainExtent = extent;
+    }
+
+    void Triangle::cleanup_swap_chain()
+    {
+        for(auto framebuffer : swapChainFrameBuffers)
+        {
+            vkDestroyFramebuffer(device, framebuffer, nullptr);
+        }
+
+        for(auto imageView : swapChainImagesViews)
+        {
+            vkDestroyImageView(device, imageView, nullptr);
+        }
+
+        vkDestroySwapchainKHR(device, swapChain, nullptr);
+
+    }
+
+    void Triangle::recreate_swap_chain()
+    {
+        vkDeviceWaitIdle(device);
+
+        cleanup_swap_chain();
+
+        create_swap_chain();
+        create_image_views();
+        create_frame_buffer();
     }
 
     void Triangle::create_image_views()
@@ -798,15 +820,17 @@ namespace app
         }
     }
 
-    void Triangle::create_command_buffer()
+    void Triangle::create_command_buffers()
     {
+        commandBuffers.resize(maxFramesInFlight);
+
         VkCommandBufferAllocateInfo allocateInfo{};
         allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocateInfo.commandPool = commandPool;
         allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocateInfo.commandBufferCount = 1;
+        allocateInfo.commandBufferCount = static_cast<std::uint32_t>(std::size(commandBuffers));
 
-        if(vkAllocateCommandBuffers(device, &allocateInfo, &commandBuffer) != VK_SUCCESS)
+        if(vkAllocateCommandBuffers(device, &allocateInfo, std::data(commandBuffers)) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to allocate command buffer."};
         }
@@ -862,6 +886,10 @@ namespace app
 
     void Triangle::create_sync_objects()
     {
+        imageAvailableSemaphores.resize(maxFramesInFlight);
+        renderFinishedSemaphores.resize(maxFramesInFlight);
+        inFlightFences.resize(maxFramesInFlight);
+
         VkSemaphoreCreateInfo semaphoreInfo{};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -869,42 +897,57 @@ namespace app
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-           vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
-           vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS)
+        for(const auto i : std::views::iota(0, maxFramesInFlight))
         {
-            throw std::runtime_error{"Error: failed to create semaphores!"};
+            if(vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+               vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+               vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS)
+            {
+                throw std::runtime_error{"Error: failed to create semaphores!"};
+            }
         }
     }
 
     void Triangle::draw_frame()
     {
-        vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, std::numeric_limits<std::uint64_t>::max());
-        vkResetFences(device, 1, &inFlightFence);
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<std::uint64_t>::max());
 
         std::uint32_t imageIndex{0};
-        vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<std::uint64_t>::max(), imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        auto result{vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<std::uint64_t>::max(), 
+                                          imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex)};
 
-        vkResetCommandBuffer(commandBuffer, 0);
-        record_command_buffer(commandBuffer, imageIndex);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            recreate_swap_chain();
+            return;
+        }
+        else if(result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
+            throw std::runtime_error{"Error: failed to acquire swap chain image."};
+        }
+
+        vkResetFences(device, 1, &inFlightFences[currentFrame]); 
+
+        vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+        record_command_buffer(commandBuffers[currentFrame], imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        std::vector<VkSemaphore> waitSemaphore{imageAvailableSemaphore};
+        std::vector<VkSemaphore> waitSemaphore{imageAvailableSemaphores[currentFrame]};
         std::vector<VkPipelineStageFlags> waitStages{VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = std::data(waitSemaphore);
         submitInfo.pWaitDstStageMask = std::data(waitStages);
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
 
-        std::vector<VkSemaphore> signalSemaphores{renderFinishedSemaphore};
+        std::vector<VkSemaphore> signalSemaphores{renderFinishedSemaphores[currentFrame]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = std::data(signalSemaphores);
 
-        if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS)
+        if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to submit to queue."};
         }
@@ -921,6 +964,17 @@ namespace app
         presentInfo.pImageIndices = &imageIndex;
         presentInfo.pResults = nullptr;
 
-        vkQueuePresentKHR(presentQueue, &presentInfo);
+        result = vkQueuePresentKHR(presentQueue, &presentInfo);
+        
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
+            recreate_swap_chain();
+        }
+        else if(result != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to present swap chain image."};
+        }
+
+        currentFrame = (currentFrame + 1) % maxFramesInFlight;
     }
 } 

@@ -43,6 +43,8 @@ namespace app
         VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const;
 
         void create_swap_chain();
+        void cleanup_swap_chain();
+        void recreate_swap_chain();
         
         void create_image_views();
         
@@ -54,7 +56,7 @@ namespace app
         void create_frame_buffer();
 
         void create_command_pool();
-        void create_command_buffer();
+        void create_command_buffers();
         void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
         void create_sync_objects();
 
@@ -83,13 +85,17 @@ namespace app
         std::vector<VkFramebuffer> swapChainFrameBuffers;
 
         VkCommandPool commandPool;
-        VkCommandBuffer commandBuffer;
+        std::vector<VkCommandBuffer> commandBuffers;
 
-        VkSemaphore imageAvailableSemaphore;
-        VkSemaphore renderFinishedSemaphore;
-        VkFence inFlightFence;
+        std::vector<VkSemaphore> imageAvailableSemaphores;
+        std::vector<VkSemaphore> renderFinishedSemaphores;
+        std::vector<VkFence> inFlightFences;
+
+        std::uint32_t currentFrame;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
+
+        constexpr static std::int32_t maxFramesInFlight{2};
 
         constexpr static std::array<const char*, 1> validationLayers
         {
