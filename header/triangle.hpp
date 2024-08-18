@@ -48,6 +48,7 @@ namespace app
         
         void create_image_views();
         
+        void create_descriptor_set_layout();
         void create_graphics_pipeline();
         VkShaderModule create_shader_module(const std::vector<char>& code);
 
@@ -61,6 +62,7 @@ namespace app
         void create_index_buffer();
         std::uint32_t find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+        void create_uniform_buffers();
 
         void create_command_pool();
         void create_command_buffers();
@@ -68,6 +70,7 @@ namespace app
         void create_sync_objects();
 
         void draw_frame();
+        void update_uniform_buffer(std::uint32_t currentImage);
 
         GLFWwindow* window;
 
@@ -87,6 +90,7 @@ namespace app
         VkExtent2D swapChainExtent;
         std::vector<VkImageView> swapChainImagesViews;
         VkRenderPass renderPass;
+        VkDescriptorSetLayout descriptorSetLayout;
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
         std::vector<VkFramebuffer> swapChainFrameBuffers;
@@ -95,6 +99,10 @@ namespace app
         VkDeviceMemory vertexBufferMemory;
         VkBuffer indexBuffer;
         VkDeviceMemory indexBufferMemory;
+
+        std::vector<VkBuffer> uniformBuffers;
+        std::vector<VkDeviceMemory> uniformBuffersMemory;
+        std::vector<void*> uniformBuffersMapped;
 
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
