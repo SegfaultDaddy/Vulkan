@@ -536,7 +536,6 @@ namespace app
         }
 
         vkDestroySwapchainKHR(device, swapChain, nullptr);
-
     }
 
     void Triangle::recreate_swap_chain()
@@ -546,8 +545,8 @@ namespace app
             std::int32_t width;
             std::int32_t height;
         } size;
-        glfwGetFramebufferSize(window, &size.width, &size.height);
 
+        glfwGetFramebufferSize(window, &size.width, &size.height);
         while(size.width == 0 || size.height ==0)
         {
             glfwGetFramebufferSize(window, &size.width, &size.height);
