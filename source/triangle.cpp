@@ -34,6 +34,7 @@ namespace app
         create_frame_buffers();
         create_command_pool();
         create_vertex_buffer();
+        create_index_buffer();
         create_command_buffers();
         create_sync_objects();
     }
@@ -41,6 +42,10 @@ namespace app
     Triangle::~Triangle()
     {
         cleanup_swap_chain();
+
+        vkDestroyBuffer(device, indexBuffer, nullptr);
+        vkFreeMemory(device, indexBufferMemory, nullptr);
+
 
         vkDestroyBuffer(device, vertexBuffer, nullptr);
         vkFreeMemory(device, vertexBufferMemory, nullptr);
@@ -204,7 +209,7 @@ namespace app
                                                             const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                                             void* userData)
     {
-        std::println(std::cerr, "Validation layer: {}", callbackData->pMessage);
+        std::println(std::cerr, "{}", callbackData->pMessage);
         if(messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
         }
@@ -895,6 +900,30 @@ namespace app
                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
 
         copy_buffer(stagingBuffer, vertexBuffer, bufferSize);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+
+    void Triangle::create_index_buffer()
+    {
+        VkDeviceSize bufferSize{sizeof(indices[0]) * std::size(indices)};
+
+        VkBuffer stagingBuffer{};
+        VkDeviceMemory stagingBufferMemory{};
+        create_buffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data{nullptr};
+        vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, std::data(indices), static_cast<std::size_t>(bufferSize));
+        vkUnmapMemory(device, stagingBufferMemory);
+
+        create_buffer(bufferSize,VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer, indexBufferMemory);
+
+        copy_buffer(stagingBuffer, indexBuffer, bufferSize);
+
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
@@ -1011,7 +1040,9 @@ namespace app
         std::vector<VkDeviceSize> offsets{0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, std::data(vertexBuffers), std::data(offsets));
 
-        vkCmdDraw(commandBuffer, static_cast<std::uint32_t>(std::size(vertices)), 1, 0, 0);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+        vkCmdDrawIndexed(commandBuffer, static_cast<std::uint32_t>(std::size(indices)), 1, 0, 0, 0);
 
         vkCmdEndRenderPass(commandBuffer);
 

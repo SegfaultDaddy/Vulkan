@@ -58,6 +58,7 @@ namespace app
         void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
                            VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         void create_vertex_buffer();
+        void create_index_buffer();
         std::uint32_t find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
@@ -92,6 +93,8 @@ namespace app
 
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
+        VkBuffer indexBuffer;
+        VkDeviceMemory indexBufferMemory;
 
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
@@ -108,11 +111,17 @@ namespace app
 
         constexpr static std::int32_t maxFramesInFlight{2};
 
-        constexpr static std::array<Vertex, 3> vertices
+        constexpr static std::array vertices
         {
-            Vertex{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            Vertex{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-            Vertex{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+            Vertex{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            Vertex{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+            Vertex{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            Vertex{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+        };
+
+        constexpr static std::array<std::uint16_t, 6> indices
+        {
+            0, 1, 2, 2, 3, 0
         };
 
         #ifdef NDEBUG
