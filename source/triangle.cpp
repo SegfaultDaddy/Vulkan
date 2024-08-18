@@ -884,11 +884,13 @@ namespace app
         viewport.height = static_cast<float>(swapChainExtent.height); 
         viewport.maxDepth = 0.0f; 
         viewport.maxDepth = 1.0f; 
+
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swapChainExtent;
+
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
         vkCmdDraw(commandBuffer, 3, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);

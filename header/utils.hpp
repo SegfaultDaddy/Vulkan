@@ -3,6 +3,7 @@
 
 #include <optional>
 #include <vector>
+#include <array>
 
 #define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
@@ -10,6 +11,16 @@
 
 namespace app
 {
+    constexpr inline std::array<const char*, 1> validationLayers
+    {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    constexpr inline std::array<const char*, 1> deviceExtensions
+    {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     struct QueueFamilyIndices
     {
         inline bool is_complete() const

@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <string_view>
-#include <array>
 
 #include "utils.hpp"
 
@@ -18,6 +17,7 @@ namespace app
     private:
         void create_instance();
         void create_window(const std::uint32_t width, const std::uint32_t height, const std::string_view name);
+        static void framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height);
         void show_extensions_support() const;
 
         bool check_validation_layer_support() const;
@@ -62,8 +62,6 @@ namespace app
 
         void draw_frame();
 
-        static void framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height);
-
         GLFWwindow* window;
 
         VkInstance instance;
@@ -100,16 +98,6 @@ namespace app
         constexpr static std::string_view name{"Vulkan Triangle"};
 
         constexpr static std::int32_t maxFramesInFlight{2};
-
-        constexpr static std::array<const char*, 1> validationLayers
-        {
-            "VK_LAYER_KHRONOS_validation"
-        };
-
-        constexpr static std::array<const char*, 1> deviceExtensions
-        {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
 
         #ifdef NDEBUG
             constexpr static bool enableValidationLayers{false};
