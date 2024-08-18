@@ -63,6 +63,8 @@ namespace app
         std::uint32_t find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties);
         void copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
         void create_uniform_buffers();
+        void create_descriptor_pool();
+        void create_descriptor_sets();
 
         void create_command_pool();
         void create_command_buffers();
@@ -103,6 +105,9 @@ namespace app
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;
         std::vector<void*> uniformBuffersMapped;
+        
+        VkDescriptorPool descriptorPool;
+        std::vector<VkDescriptorSet> descriptorSets;
 
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
