@@ -53,7 +53,10 @@ namespace app
 
         void create_render_pass();
 
-        void create_frame_buffer();
+        void create_frame_buffers();
+
+        void create_vertex_buffer();
+        std::uint32_t find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
         void create_command_pool();
         void create_command_buffers();
@@ -83,6 +86,9 @@ namespace app
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
         std::vector<VkFramebuffer> swapChainFrameBuffers;
+
+        VkBuffer vertexBuffer;
+        VkDeviceMemory vertexBufferMemory;
 
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;

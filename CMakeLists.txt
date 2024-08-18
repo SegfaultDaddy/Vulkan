@@ -10,7 +10,7 @@ find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
 
-file(GLOB app_source CONFIGURE_DEPENDS "header/*.h" "source/*.cpp" "header/*.hpp")
+file(GLOB app_source CONFIGURE_DEPENDS "*.cpp" "*.h" "*.hpp" "header/*.h" "source/*.cpp" "header/*.hpp")
 
 add_executable(app ${app_source})
 target_include_directories(app PRIVATE source header)

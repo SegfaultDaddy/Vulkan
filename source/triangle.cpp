@@ -5,6 +5,10 @@
 #include <set>
 #include <algorithm>
 
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_vulkan.h>
+
 #include "file.hpp"
 #include "triangle.hpp"
 
@@ -27,8 +31,9 @@ namespace app
         create_image_views();
         create_render_pass();
         create_graphics_pipeline();
-        create_frame_buffer();
+        create_frame_buffers();
         create_command_pool();
+        create_vertex_buffer();
         create_command_buffers();
         create_sync_objects();
     }
@@ -36,6 +41,10 @@ namespace app
     Triangle::~Triangle()
     {
         cleanup_swap_chain();
+
+        vkDestroyBuffer(device, vertexBuffer, nullptr);
+        vkFreeMemory(device, vertexBufferMemory, nullptr);
+
         for(const auto i : std::views::iota(0, maxFramesInFlight))
         {
             vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
@@ -559,7 +568,7 @@ namespace app
 
         create_swap_chain();
         create_image_views();
-        create_frame_buffer();
+        create_frame_buffers();
     }
 
     void Triangle::create_image_views()
@@ -800,7 +809,7 @@ namespace app
         }
     }
 
-    void Triangle::create_frame_buffer()
+    void Triangle::create_frame_buffers()
     {
         swapChainFrameBuffers.resize(std::size(swapChainImagesViews));
         for(const auto i : std::views::iota(0ull, std::size(swapChainImagesViews)))
@@ -836,6 +845,59 @@ namespace app
         {
             throw std::runtime_error{"Error: failed to create command pool."};
         }
+    }
+
+    void Triangle::create_vertex_buffer()
+    {
+        VkBufferCreateInfo bufferCreateInfo{};
+        bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCreateInfo.size = sizeof(vertices[0]) * std::size(vertices);
+        bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create vertex buffer."};
+        }
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetBufferMemoryRequirements(device, vertexBuffer, &memoryRequirements);
+
+        VkMemoryAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.allocationSize = memoryRequirements.size;
+        allocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        
+        if(vkAllocateMemory(device, &allocateInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to allocate vertex buffer memory."};
+        }
+
+        vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+
+        void* data{nullptr};
+        vkMapMemory(device, vertexBufferMemory, 0, bufferCreateInfo.size, 0, &data);
+        memcpy(data, std::data(vertices), static_cast<std::size_t>(bufferCreateInfo.size));
+        vkUnmapMemory(device, vertexBufferMemory);
+    }
+
+    std::uint32_t Triangle::find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memoryProperties{};
+        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+        for(const auto i : std::views::iota(0u, memoryProperties.memoryTypeCount))
+        {
+            if(typeFilter & (1 << i) && 
+               (memoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                return i;
+            }
+        }
+
+        throw std::runtime_error{"Error: failed to find suitable memory type."};
+
+        return {};
     }
 
     void Triangle::create_command_buffers()
@@ -887,15 +949,19 @@ namespace app
         viewport.height = static_cast<float>(swapChainExtent.height); 
         viewport.maxDepth = 0.0f; 
         viewport.maxDepth = 1.0f; 
-
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = swapChainExtent;
-
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+        std::vector<VkBuffer> vertexBuffers{vertexBuffer};
+        std::vector<VkDeviceSize> offsets{0};
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, std::data(vertexBuffers), std::data(offsets));
+
+        vkCmdDraw(commandBuffer, static_cast<std::uint32_t>(std::size(vertices)), 1, 0, 0);
+
         vkCmdEndRenderPass(commandBuffer);
 
         if(vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
