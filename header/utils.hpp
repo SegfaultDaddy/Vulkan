@@ -49,6 +49,13 @@ namespace app
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;
     };
+
+    struct UniformBufferObject
+    {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 projection;
+    };
     
     VkResult create_debug_utils_messanger_ext(VkInstance instance, 
                                               const VkDebugUtilsMessengerCreateInfoEXT* createInfo,
