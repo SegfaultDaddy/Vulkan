@@ -846,16 +846,17 @@ namespace app
             throw std::runtime_error{"Error: failed to create command pool."};
         }
     }
-
-    void Triangle::create_vertex_buffer()
+    
+    void Triangle::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
+                                 VkBuffer& buffer, VkDeviceMemory& bufferMemory)
     {
         VkBufferCreateInfo bufferCreateInfo{};
         bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferCreateInfo.size = sizeof(vertices[0]) * std::size(vertices);
-        bufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferCreateInfo.size = size;
+        bufferCreateInfo.usage = usage;
         bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        if(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &vertexBuffer) != VK_SUCCESS)
+        if(vkCreateBuffer(device, &bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to create vertex buffer."};
         }
@@ -866,19 +867,24 @@ namespace app
         VkMemoryAllocateInfo allocateInfo{};
         allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocateInfo.allocationSize = memoryRequirements.size;
-        allocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                                                                           VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        allocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryTypeBits, properties);
         
-        if(vkAllocateMemory(device, &allocateInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS)
+        if(vkAllocateMemory(device, &allocateInfo, nullptr, &bufferMemory) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to allocate vertex buffer memory."};
         }
 
-        vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+        vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    }
 
+    void Triangle::create_vertex_buffer()
+    {
+        VkDeviceSize bufferSize{sizeof(vertices[0]) * std::size(vertices)};
+        create_buffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer, vertexBufferMemory);
         void* data{nullptr};
-        vkMapMemory(device, vertexBufferMemory, 0, bufferCreateInfo.size, 0, &data);
-        memcpy(data, std::data(vertices), static_cast<std::size_t>(bufferCreateInfo.size));
+        vkMapMemory(device, vertexBufferMemory, 0, bufferSize, 0, &data);
+        memcpy(data, std::data(vertices), static_cast<std::size_t>(bufferSize));
         vkUnmapMemory(device, vertexBufferMemory);
     }
 

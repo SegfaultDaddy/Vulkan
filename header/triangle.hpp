@@ -55,6 +55,8 @@ namespace app
 
         void create_frame_buffers();
 
+        void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
+                           VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         void create_vertex_buffer();
         std::uint32_t find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
