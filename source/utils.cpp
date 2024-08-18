@@ -1,9 +1,36 @@
+#include <cstddef>
 #include <cstdint>
 
 #include "utils.hpp"
 
 namespace app
 {
+    VkVertexInputBindingDescription Vertex::binding_description()
+    {
+        VkVertexInputBindingDescription bindingDesrciption{};
+        bindingDesrciption.binding = 0;
+        bindingDesrciption.stride = sizeof(Vertex);
+        bindingDesrciption.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDesrciption;
+    }
+
+    std::array<VkVertexInputAttributeDescription, 2> Vertex::attribute_description()
+    {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescription{};
+        attributeDescription[0].binding = 0;
+        attributeDescription[0].location = 0;
+        attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescription[0].offset = offsetof(Vertex, position);
+        
+        attributeDescription[1].binding = 0;
+        attributeDescription[1].location = 1;
+        attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescription[1].offset = offsetof(Vertex, color);
+        
+        return attributeDescription;
+    }
+
     VkResult create_debug_utils_messanger_ext(VkInstance instance, 
                                               const VkDebugUtilsMessengerCreateInfoEXT* createInfo,
                                               const VkAllocationCallbacks* allocator,

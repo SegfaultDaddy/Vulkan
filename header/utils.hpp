@@ -9,6 +9,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+
 namespace app
 {
     constexpr inline std::array<const char*, 1> validationLayers
@@ -19,6 +21,15 @@ namespace app
     constexpr inline std::array<const char*, 1> deviceExtensions
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
+    struct Vertex
+    {
+        static VkVertexInputBindingDescription binding_description();
+        static std::array<VkVertexInputAttributeDescription, 2> attribute_description();
+
+        glm::vec2 position;
+        glm::vec3 color;
     };
 
     struct QueueFamilyIndices

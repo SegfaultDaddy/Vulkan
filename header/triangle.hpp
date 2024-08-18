@@ -99,6 +99,13 @@ namespace app
 
         constexpr static std::int32_t maxFramesInFlight{2};
 
+        constexpr static std::array<Vertex, 3> vertices
+        {
+            Vertex{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            Vertex{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            Vertex{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+        };
+
         #ifdef NDEBUG
             constexpr static bool enableValidationLayers{false};
         #else 

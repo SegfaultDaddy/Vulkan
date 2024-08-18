@@ -620,12 +620,15 @@ namespace app
         dynamicState.dynamicStateCount = static_cast<std::uint32_t>(std::size(dynamicStates));
         dynamicState.pDynamicStates = std::data(dynamicStates);
 
+        auto bindingDescription{Vertex::binding_description()};
+        auto attributeDescription{Vertex::attribute_description()};
+
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.pVertexBindingDescriptions = nullptr;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
-        vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<std::uint32_t>(std::size(attributeDescription));
+        vertexInputInfo.pVertexAttributeDescriptions = std::data(attributeDescription);
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
