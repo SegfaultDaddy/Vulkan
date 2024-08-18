@@ -1,5 +1,4 @@
 #include <stdexcept>
-
 #include <iostream>
 #include <print>
 #include <ranges>
@@ -15,10 +14,11 @@ namespace app
 {   
     Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
         : physicalDevice{VK_NULL_HANDLE}, currentFrame{0}
+        , framebufferResized{false}
     {
         create_window(width, height, name);
         create_instance();
-        //show_extensions_support();
+        show_extensions_support();
         setup_debug_messages();
         create_surface();
         pick_physical_device();
@@ -79,8 +79,11 @@ namespace app
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(width, height, std::data(name), nullptr, nullptr);
+        glfwSetWindowUserPointer(window, this);
+        glfwSetFramebufferSizeCallback(window, &framebuffer_resize_callback);
+        
     }
 
     void Triangle::create_instance()
@@ -538,6 +541,19 @@ namespace app
 
     void Triangle::recreate_swap_chain()
     {
+        struct         
+        {
+            std::int32_t width;
+            std::int32_t height;
+        } size;
+        glfwGetFramebufferSize(window, &size.width, &size.height);
+
+        while(size.width == 0 || size.height ==0)
+        {
+            glfwGetFramebufferSize(window, &size.width, &size.height);
+            glfwWaitEvents();
+        }
+        
         vkDeviceWaitIdle(device);
 
         cleanup_swap_chain();
@@ -966,8 +982,11 @@ namespace app
 
         result = vkQueuePresentKHR(presentQueue, &presentInfo);
         
-        if(result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        if(result == VK_ERROR_OUT_OF_DATE_KHR || 
+           result == VK_SUBOPTIMAL_KHR ||
+           framebufferResized)
         {
+            framebufferResized = false;
             recreate_swap_chain();
         }
         else if(result != VK_SUCCESS)
@@ -976,5 +995,11 @@ namespace app
         }
 
         currentFrame = (currentFrame + 1) % maxFramesInFlight;
+    }
+
+    void Triangle::framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height)
+    {
+        auto appliacation{reinterpret_cast<Triangle*>(glfwGetWindowUserPointer(window))};
+        appliacation->framebufferResized = true;
     }
 } 

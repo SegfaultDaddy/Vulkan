@@ -62,6 +62,8 @@ namespace app
 
         void draw_frame();
 
+        static void framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height);
+
         GLFWwindow* window;
 
         VkInstance instance;
@@ -90,6 +92,8 @@ namespace app
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
+
+        bool framebufferResized;
 
         std::uint32_t currentFrame;
 
