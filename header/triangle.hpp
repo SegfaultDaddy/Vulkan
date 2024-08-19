@@ -66,10 +66,13 @@ namespace app
         void create_descriptor_pool();
         void create_descriptor_sets();
 
-        void create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageUsageFlags usage, 
+        void create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void create_texture_image();
 
+        VkCommandBuffer begin_single_time_commands();
+        void end_single_time_commands(VkCommandBuffer commandBuffer);
+        void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout freshLayout);
         void create_command_pool();
         void create_command_buffers();
         void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
