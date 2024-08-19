@@ -72,7 +72,8 @@ namespace app
 
         VkCommandBuffer begin_single_time_commands();
         void end_single_time_commands(VkCommandBuffer commandBuffer);
-        void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout freshLayout);
+        void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void copy_buffer_to_image(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height);
         void create_command_pool();
         void create_command_buffers();
         void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
