@@ -69,7 +69,9 @@ namespace app
         void create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void create_texture_image();
-
+        VkImageView create_image_view(VkImage image, VkFormat format);
+        void create_image_views();
+        void create_texture_image_view();
         VkCommandBuffer begin_single_time_commands();
         void end_single_time_commands(VkCommandBuffer commandBuffer);
         void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -121,6 +123,7 @@ namespace app
         std::vector<VkCommandBuffer> commandBuffers;
 
         VkImage textureImage;
+        VkImageView textureImageView;
         VkDeviceMemory textureImageMemory;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;

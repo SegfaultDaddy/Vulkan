@@ -42,6 +42,7 @@ namespace app
         create_frame_buffers();
         create_command_pool();
         create_texture_image();
+        create_texture_image_view();
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
@@ -54,6 +55,11 @@ namespace app
     Triangle::~Triangle()
     {
         cleanup_swap_chain();
+
+        vkDestroyImageView(device, textureImageView, nullptr);
+
+        vkDestroyImage(device, textureImage, nullptr);
+        vkFreeMemory(device, textureImageMemory, nullptr);
         
         for(const auto i : std::views::iota(0, maxFramesInFlight))
         {
@@ -965,6 +971,46 @@ namespace app
         transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copy_buffer_to_image(stagingBuffer, textureImage, static_cast<std::uint32_t>(texture.width), static_cast<std::uint32_t>(texture.height));
         transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        vkDestroyBuffer(device, stagingBuffer, nullptr);
+        vkFreeMemory(device, stagingBufferMemory, nullptr);
+    }
+    
+    VkImageView Triangle::create_image_view(VkImage image, VkFormat format)
+    {
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = textureImage;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        VkImageView imageView{};
+        if(vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create texture image view."};
+        }
+
+        return imageView;
+    }
+
+    void Triangle::create_image_views()
+    {
+        swapChainImagesViews.resize(std::size(swapChainImages));
+
+        for(const auto i : std::views::iota(0ull, std::size(swapChainImages)))
+        {
+            swapChainImagesViews[i] = create_image_view(swapChainImages[i], swapChainImageFormat);
+        }
+    }
+
+    void Triangle::create_texture_image_view()
+    {
+        textureImageView = create_image_view(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
     
     void Triangle::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
@@ -1199,10 +1245,31 @@ namespace app
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = 0;
 
-        VkPipelineStageFlags sourceFlags{};
-        VkPipelineStageFlags destinationFlags{};
+        VkPipelineStageFlags sourceStage{};
+        VkPipelineStageFlags destinationStage{};
 
-        vkCmdPipelineBarrier(commandBuffer, 0, 0, 0, 0, nullptr, 
+        if(oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if(oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+            destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        }
+        else
+        {
+            throw std::invalid_argument{"Error: unsupported layout transition."};
+        }
+
+        vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 
                              0, nullptr, 1, &barrier);
 
         end_single_time_commands(commandBuffer);
