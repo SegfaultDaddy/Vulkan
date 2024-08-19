@@ -67,6 +67,7 @@ namespace app
         void create_descriptor_sets();
 
         void create_command_pool();
+        void create_texture_image();
         void create_command_buffers();
         void record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex);
         void create_sync_objects();
@@ -111,6 +112,9 @@ namespace app
 
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
+
+        VkImage textureImage;
+        VkDeviceMemory textureImageMemory;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;

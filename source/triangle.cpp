@@ -14,6 +14,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "stb_image.hpp"
+
 #include "file.hpp"
 #include "triangle.hpp"
 
@@ -39,6 +41,7 @@ namespace app
         create_graphics_pipeline();
         create_frame_buffers();
         create_command_pool();
+        create_texture_image();
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
@@ -888,6 +891,71 @@ namespace app
             throw std::runtime_error{"Error: failed to create command pool."};
         }
     }
+
+    void Triangle::create_texture_image()
+    {
+        struct 
+        {
+            std::int32_t  width;
+            std::int32_t  height;
+            std::int32_t  channels;
+        } texture;
+        stbi_uc* pixels = stbi_load("../texture/texture.jpg", &texture.width, &texture.height, &texture.channels, STBI_rgb_alpha);
+        VkDeviceSize imageSize{static_cast<VkDeviceSize>(texture.width * texture.height * 4)};
+
+        if(!pixels)
+        {
+            throw std::runtime_error{"Error: failed to load texture image."};
+        }
+
+        VkBuffer stagingBuffer{};
+        VkDeviceMemory stagingBufferMemory{};
+        
+        create_buffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+        void* data{};
+        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+        memcpy(data, pixels, static_cast<std::size_t>(imageSize));
+        vkUnmapMemory(device, stagingBufferMemory);
+        stbi_image_free(pixels);
+
+        VkImageCreateInfo imageCreateInfo{};
+        imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageCreateInfo.extent.width = static_cast<std::uint32_t>(texture.width);
+        imageCreateInfo.extent.height = static_cast<std::uint32_t>(texture.height);
+        imageCreateInfo.extent.depth = 1;
+        imageCreateInfo.mipLevels = 1;
+        imageCreateInfo.arrayLayers = 1;
+        imageCreateInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageCreateInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateInfo.flags = 0;
+
+        if(vkCreateImage(device, &imageCreateInfo, nullptr, &textureImage))
+        {
+            throw std::runtime_error{"Error: failed to create image."};
+        }
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetImageMemoryRequirements(device, textureImage, &memoryRequirements);
+
+        VkMemoryAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.allocationSize = memoryRequirements.size;
+        allocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        if(vkAllocateMemory(device, &allocateInfo, nullptr, &textureImageMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to allocate image memory."};
+        }
+
+        vkBindImageMemory(device, textureImage, textureImageMemory, 0);
+    }
     
     void Triangle::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
                                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
@@ -951,7 +1019,7 @@ namespace app
         create_buffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-        void* data{nullptr};
+        void* data{};
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
         memcpy(data, std::data(indices), static_cast<std::size_t>(bufferSize));
         vkUnmapMemory(device, stagingBufferMemory);
