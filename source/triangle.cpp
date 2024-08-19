@@ -891,6 +891,49 @@ namespace app
             throw std::runtime_error{"Error: failed to create command pool."};
         }
     }
+    
+    void Triangle::create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+                                VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
+    {
+        VkImageCreateInfo imageCreateInfo{};
+        imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageCreateInfo.extent.width = static_cast<std::uint32_t>(width);
+        imageCreateInfo.extent.height = static_cast<std::uint32_t>(height);
+        imageCreateInfo.extent.depth = 1;
+        imageCreateInfo.mipLevels = 1;
+        imageCreateInfo.arrayLayers = 1;
+        imageCreateInfo.format = format;
+        imageCreateInfo.tiling = tiling;
+        imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageCreateInfo.usage = usage;
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateInfo.flags = 0;
+
+        if(vkCreateImage(device, &imageCreateInfo, nullptr, &image))
+        {
+            throw std::runtime_error{"Error: failed to create image."};
+        }
+
+        VkMemoryRequirements memoryRequirements{};
+        vkGetImageMemoryRequirements(device, image, &memoryRequirements);
+
+        VkMemoryAllocateInfo allocateInfo{};
+        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocateInfo.allocationSize = memoryRequirements.size;
+        allocateInfo.memoryTypeIndex = find_memory_type(memoryRequirements.memoryTypeBits, properties);
+
+        if(vkAllocateMemory(device, &allocateInfo, nullptr, &imageMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to allocate image memory."};
+        }
+
+        vkBindImageMemory(device, image, imageMemory, 0);
+    }
+
+    }
+
 
     void Triangle::create_texture_image()
     {
