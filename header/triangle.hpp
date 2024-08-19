@@ -70,8 +70,8 @@ namespace app
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         void create_texture_image();
         VkImageView create_image_view(VkImage image, VkFormat format);
-        void create_image_views();
         void create_texture_image_view();
+        void create_texture_sampler();
         VkCommandBuffer begin_single_time_commands();
         void end_single_time_commands(VkCommandBuffer commandBuffer);
         void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
@@ -100,7 +100,7 @@ namespace app
         std::vector<VkImage> swapChainImages;
         VkFormat swapChainImageFormat;
         VkExtent2D swapChainExtent;
-        std::vector<VkImageView> swapChainImagesViews;
+        std::vector<VkImageView> swapChainImageViews;
         VkRenderPass renderPass;
         VkDescriptorSetLayout descriptorSetLayout;
         VkPipelineLayout pipelineLayout;
@@ -123,8 +123,10 @@ namespace app
         std::vector<VkCommandBuffer> commandBuffers;
 
         VkImage textureImage;
-        VkImageView textureImageView;
         VkDeviceMemory textureImageMemory;
+        VkImageView textureImageView;
+        VkSampler textureSampler;
+
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;

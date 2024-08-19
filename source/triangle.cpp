@@ -43,6 +43,7 @@ namespace app
         create_command_pool();
         create_texture_image();
         create_texture_image_view();
+        create_texture_sampler();
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
@@ -56,6 +57,7 @@ namespace app
     {
         cleanup_swap_chain();
 
+        vkDestroySampler(device, textureSampler, nullptr);
         vkDestroyImageView(device, textureImageView, nullptr);
 
         vkDestroyImage(device, textureImage, nullptr);
@@ -333,12 +335,16 @@ namespace app
             auto swapChainDetails{query_swap_chain_support(device)};
             swapChainAdequate = !std::empty(swapChainDetails.formats) && !std::empty(swapChainDetails.presentModes);
         }
+
+        VkPhysicalDeviceFeatures supportedFeatures{};
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
         
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
                deviceFeatures.geometryShader &&
                find_queue_families(device).is_complete() &&
                extensionsSupported &&
-               swapChainAdequate;
+               swapChainAdequate &&
+               supportedFeatures.samplerAnisotropy;
     }
 
     QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
@@ -395,6 +401,7 @@ namespace app
         }
 
         VkPhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -570,7 +577,7 @@ namespace app
             vkDestroyFramebuffer(device, framebuffer, nullptr);
         }
 
-        for(auto imageView : swapChainImagesViews)
+        for(auto imageView : swapChainImageViews)
         {
             vkDestroyImageView(device, imageView, nullptr);
         }
@@ -604,30 +611,11 @@ namespace app
 
     void Triangle::create_image_views()
     {
-        swapChainImagesViews.resize(std::size(swapChainImages));
+        swapChainImageViews.resize(std::size(swapChainImages));
+
         for(const auto i : std::views::iota(0ull, std::size(swapChainImages)))
         {
-            VkImageViewCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = swapChainImages[i];
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = swapChainImageFormat;
-
-            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-
-            if(vkCreateImageView(device, &createInfo, nullptr, &swapChainImagesViews[i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error{"Error: failed create image views."};
-            }
+            swapChainImageViews[i] = create_image_view(swapChainImages[i], swapChainImageFormat);
         }
     }
 
@@ -862,10 +850,10 @@ namespace app
 
     void Triangle::create_frame_buffers()
     {
-        swapChainFrameBuffers.resize(std::size(swapChainImagesViews));
-        for(const auto i : std::views::iota(0ull, std::size(swapChainImagesViews)))
+        swapChainFrameBuffers.resize(std::size(swapChainImageViews));
+        for(const auto i : std::views::iota(0ull, std::size(swapChainImageViews)))
         {
-            std::vector<VkImageView> attachments{swapChainImagesViews[i]};
+            std::vector<VkImageView> attachments{swapChainImageViews[i]};
 
             VkFramebufferCreateInfo frameBufferInfo{};
             frameBufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -913,11 +901,11 @@ namespace app
         imageCreateInfo.tiling = tiling;
         imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageCreateInfo.usage = usage;
-        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageCreateInfo.flags = 0;
 
-        if(vkCreateImage(device, &imageCreateInfo, nullptr, &image))
+        if(vkCreateImage(device, &imageCreateInfo, nullptr, &image) != VK_SUCCESS)
         {
             throw std::runtime_error{"Error: failed to create image."};
         }
@@ -949,7 +937,7 @@ namespace app
         stbi_uc* pixels = stbi_load("../texture/texture.jpg", &texture.width, &texture.height, &texture.channels, STBI_rgb_alpha);
         VkDeviceSize imageSize{static_cast<VkDeviceSize>(texture.width * texture.height * 4)};
 
-        if(!pixels)
+        if(pixels == nullptr)
         {
             throw std::runtime_error{"Error: failed to load texture image."};
         }
@@ -964,6 +952,7 @@ namespace app
         vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
         memcpy(data, pixels, static_cast<std::size_t>(imageSize));
         vkUnmapMemory(device, stagingBufferMemory);
+
         stbi_image_free(pixels);
 
         create_image(texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
@@ -980,12 +969,12 @@ namespace app
     {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image = textureImage;
+        viewInfo.image = image;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
@@ -998,21 +987,42 @@ namespace app
         return imageView;
     }
 
-    void Triangle::create_image_views()
-    {
-        swapChainImagesViews.resize(std::size(swapChainImages));
-
-        for(const auto i : std::views::iota(0ull, std::size(swapChainImages)))
-        {
-            swapChainImagesViews[i] = create_image_view(swapChainImages[i], swapChainImageFormat);
-        }
-    }
-
     void Triangle::create_texture_image_view()
     {
         textureImageView = create_image_view(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
     }
     
+    void Triangle::create_texture_sampler()
+    {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy = 1.0f;
+
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+
+        samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy; 
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerInfo.mipLodBias = 0.0f;
+        samplerInfo.minLod = 0.0f;
+        samplerInfo.maxLod = 0.0f;
+
+        if(vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS)
+        {
+            throw std::runtime_error{"Error: failed to create texture sampler."};
+        }
+    }
+
     void Triangle::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
                                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
     {
