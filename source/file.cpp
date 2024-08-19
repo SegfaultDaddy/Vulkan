@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "file.hpp"
+#include "stb_image.hpp"
 
 namespace file
 {
