@@ -1618,7 +1618,7 @@ namespace app
             throw std::runtime_error(warnings + errors);
         }
 
-        std::unordered_map<std::size_t, std::uint32_t> uniqueVertices{};
+        std::unordered_map<Vertex, std::uint32_t> uniqueVertices{};
         for(const auto& shape : shapes) 
         {
             for(const auto& index : shape.mesh.indices) 
@@ -1634,14 +1634,13 @@ namespace app
 
                 vertex.color = {1.0f, 1.0f, 1.0f};
 
-                auto hash{std::hash<Vertex>{}(vertex)};
-                if(uniqueVertices.find(hash) == std::end(uniqueVertices))
+                if(uniqueVertices.find(vertex) == std::end(uniqueVertices))
                 {
-                    uniqueVertices[hash] = static_cast<std::uint32_t>(std::size(vertices));
+                    uniqueVertices[vertex] = static_cast<std::uint32_t>(std::size(vertices));
                     vertices.push_back(vertex);
                 }
 
-                indices.push_back(uniqueVertices[hash]);
+                indices.push_back(uniqueVertices[vertex]);
             }
         }
     }  

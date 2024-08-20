@@ -38,6 +38,13 @@ namespace app
 
         return attributeDescription;
     }
+    
+    bool Vertex::operator==(const Vertex& that) const
+    {
+        return position == that.position && 
+               color == that.color && 
+               textureCoordinate == that.textureCoordinate;
+    }
 
     VkResult create_debug_utils_messanger_ext(VkInstance instance, 
                                               const VkDebugUtilsMessengerCreateInfoEXT* createInfo,
