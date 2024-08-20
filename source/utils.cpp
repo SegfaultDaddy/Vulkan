@@ -1,6 +1,9 @@
 #include <cstddef>
 #include <cstdint>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
+
 #include "utils.hpp"
 
 namespace app
@@ -63,4 +66,13 @@ namespace app
         }
     } 
 }
-    
+
+namespace std
+{
+    size_t hash<app::Vertex>::operator()(const app::Vertex& vertex) const
+    {
+        return (hash<glm::vec3>{}(vertex.position) ^
+               (hash<glm::vec3>{}(vertex.color) << 1) >> 1) ^
+               (hash<glm::vec2>{}(vertex.textureCoordinate) << 1);
+    }
+}

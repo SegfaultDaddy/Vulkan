@@ -27,7 +27,7 @@
 #undef max
 
 namespace app
-{   
+{
     Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
         : physicalDevice{VK_NULL_HANDLE}, currentFrame{0}
         , framebufferResized{false}
@@ -1607,22 +1607,23 @@ namespace app
     
     void Triangle::load_model()
     {
-         tinyobj::attrib_t attribute{};
+        tinyobj::attrib_t attribute{};
         std::vector<tinyobj::shape_t> shapes{};
         std::vector<tinyobj::material_t> materials{};
         std::string warnings{};
         std::string errors{};
 
-        if (!tinyobj::LoadObj(&attribute, &shapes, &materials, &warnings, &errors, std::data(modelPath))) 
+        if(!tinyobj::LoadObj(&attribute, &shapes, &materials, &warnings, &errors, std::data(modelPath))) 
         {
             throw std::runtime_error(warnings + errors);
         }
 
-        for (const auto& shape : shapes) 
+        std::unordered_map<std::size_t, std::uint32_t> uniqueVertices{};
+        for(const auto& shape : shapes) 
         {
-            for (const auto& index : shape.mesh.indices) 
+            for(const auto& index : shape.mesh.indices) 
             {
-                Vertex vertex{};
+                app::Vertex vertex{};
 
                 vertex.position = {attribute.vertices[3 * index.vertex_index + 0],
                                    attribute.vertices[3 * index.vertex_index + 1],
@@ -1633,9 +1634,15 @@ namespace app
 
                 vertex.color = {1.0f, 1.0f, 1.0f};
 
-                vertices.push_back(vertex);
-                indices.push_back(std::size(indices));
+                auto hash{std::hash<Vertex>{}(vertex)};
+                if(uniqueVertices.find(hash) == std::end(uniqueVertices))
+                {
+                    uniqueVertices[hash] = static_cast<std::uint32_t>(std::size(vertices));
+                    vertices.push_back(vertex);
+                }
+
+                indices.push_back(uniqueVertices[hash]);
             }
         }
-    } 
+    }  
 }

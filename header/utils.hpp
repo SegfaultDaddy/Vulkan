@@ -13,6 +13,11 @@
 
 namespace app
 {
+    struct Struct
+    {
+        int hello;
+    };
+
     struct Vertex
     {
         static VkVertexInputBindingDescription binding_description();
@@ -65,6 +70,14 @@ namespace app
     void destroy_debug_utils_messenger_ext(VkInstance instance, 
                                            VkDebugUtilsMessengerEXT debugMessanger,
                                            const VkAllocationCallbacks* allocator);
+}
+
+namespace std
+{
+    template<> struct hash<app::Vertex>
+    {
+        size_t operator()(const app::Vertex& vertex) const;
+    };
 }
 
 #endif
