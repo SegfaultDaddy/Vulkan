@@ -9,6 +9,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(Vulkan REQUIRED)
+find_package(tinyobjloader CONFIG REQUIRED)
 
 file(GLOB app_source CONFIGURE_DEPENDS "*.cpp" "*.h" "*.hpp" "header/*.h" "source/*.cpp" "header/*.hpp")
 
@@ -18,3 +19,4 @@ target_link_libraries(app PRIVATE imgui::imgui)
 target_link_libraries(app PRIVATE glfw)
 target_link_libraries(app PRIVATE Vulkan::Vulkan)
 target_link_libraries(app PRIVATE glm::glm)
+target_link_libraries(app PRIVATE tinyobjloader::tinyobjloader)

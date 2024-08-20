@@ -61,6 +61,6 @@ namespace app
         {
             function(instance, debugMessanger, allocator);
         }
-    }
+    } 
 }
     

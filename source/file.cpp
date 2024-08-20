@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include <fstream>
 
+#include "utils.hpp"
 #include "file.hpp"
 
 namespace file

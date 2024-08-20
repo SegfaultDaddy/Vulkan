@@ -88,6 +88,8 @@ namespace app
         void draw_frame();
         void update_uniform_buffer(std::uint32_t currentImage);
 
+        void load_model();
+
         GLFWwindow* window;
 
         VkInstance instance;
@@ -110,6 +112,9 @@ namespace app
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
         std::vector<VkFramebuffer> swapChainFrameBuffers;
+
+        std::vector<Vertex> vertices;
+        std::vector<std::uint32_t> indices;
 
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
@@ -145,27 +150,10 @@ namespace app
         std::uint32_t currentFrame;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
-
         constexpr static std::int32_t maxFramesInFlight{2};
 
-        constexpr static std::array vertices
-        {
-            Vertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            Vertex{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            Vertex{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            Vertex{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-
-            Vertex{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            Vertex{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-        };
-
-        constexpr static std::array<std::uint16_t, 12> indices
-        {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4
-        };
+        constexpr static std::string_view modelPath{"../model/viking_room.obj"};
+        constexpr static std::string_view texturePath{"../texture/viking_room.png"};
 
         #ifdef NDEBUG
             constexpr static bool enableValidationLayers{false};

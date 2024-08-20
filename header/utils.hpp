@@ -13,16 +13,6 @@
 
 namespace app
 {
-    constexpr inline std::array<const char*, 1> validationLayers
-    {
-        "VK_LAYER_KHRONOS_validation"
-    };
-
-    constexpr inline std::array<const char*, 1> deviceExtensions
-    {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-
     struct Vertex
     {
         static VkVertexInputBindingDescription binding_description();
@@ -32,6 +22,16 @@ namespace app
         glm::vec3 color;
         glm::vec2 textureCoordinate;
     };
+
+    constexpr inline std::array<const char*, 1> validationLayers
+    {
+        "VK_LAYER_KHRONOS_validation"
+    };
+
+    constexpr inline std::array<const char*, 1> deviceExtensions
+    {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    }; 
 
     struct QueueFamilyIndices
     {

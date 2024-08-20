@@ -5,6 +5,7 @@
 #include <set>
 #include <algorithm>
 #include <chrono>
+#include <unordered_map>
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -16,6 +17,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "stb_image.hpp"
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 #include "file.hpp"
 #include "triangle.hpp"
@@ -46,6 +50,7 @@ namespace app
         create_texture_image();
         create_texture_image_view();
         create_texture_sampler();
+        load_model();
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
@@ -1019,7 +1024,7 @@ namespace app
             std::int32_t  height;
             std::int32_t  channels;
         } texture;
-        stbi_uc* pixels = stbi_load("../texture/texture.jpg", &texture.width, &texture.height, &texture.channels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(std::data(texturePath), &texture.width, &texture.height, &texture.channels, STBI_rgb_alpha);
         VkDeviceSize imageSize{static_cast<VkDeviceSize>(texture.width * texture.height * 4)};
 
         if(pixels == nullptr)
@@ -1466,7 +1471,7 @@ namespace app
         std::vector<VkDeviceSize> offsets{0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, std::data(vertexBuffers), std::data(offsets));
 
-        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 
                                 0, 1, &descriptorSets[currentFrame], 0, nullptr);
@@ -1599,4 +1604,38 @@ namespace app
         auto appliacation{reinterpret_cast<Triangle*>(glfwGetWindowUserPointer(window))};
         appliacation->framebufferResized = true;
     }
-} 
+    
+    void Triangle::load_model()
+    {
+         tinyobj::attrib_t attribute{};
+        std::vector<tinyobj::shape_t> shapes{};
+        std::vector<tinyobj::material_t> materials{};
+        std::string warnings{};
+        std::string errors{};
+
+        if (!tinyobj::LoadObj(&attribute, &shapes, &materials, &warnings, &errors, std::data(modelPath))) 
+        {
+            throw std::runtime_error(warnings + errors);
+        }
+
+        for (const auto& shape : shapes) 
+        {
+            for (const auto& index : shape.mesh.indices) 
+            {
+                Vertex vertex{};
+
+                vertex.position = {attribute.vertices[3 * index.vertex_index + 0],
+                                   attribute.vertices[3 * index.vertex_index + 1],
+                                   attribute.vertices[3 * index.vertex_index + 2]};
+
+                vertex.textureCoordinate = {attribute.texcoords[2 * index.texcoord_index + 0],
+                                            1.0f - attribute.texcoords[2 * index.texcoord_index + 1]};
+
+                vertex.color = {1.0f, 1.0f, 1.0f};
+
+                vertices.push_back(vertex);
+                indices.push_back(std::size(indices));
+            }
+        }
+    } 
+}
