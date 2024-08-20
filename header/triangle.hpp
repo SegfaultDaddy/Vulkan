@@ -68,8 +68,12 @@ namespace app
 
         void create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        VkFormat find_depth_format();
+        bool has_stencil_component(VkFormat format);
+        void create_depth_resources();
         void create_texture_image();
-        VkImageView create_image_view(VkImage image, VkFormat format);
+        VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
         void create_texture_image_view();
         void create_texture_sampler();
         VkCommandBuffer begin_single_time_commands();
@@ -122,11 +126,15 @@ namespace app
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
 
+        VkImage depthImage;
+        VkDeviceMemory depthImageMemory;
+        VkImageView depthImageView;
+
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
-        VkSampler textureSampler;
 
+        VkSampler textureSampler;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
@@ -142,15 +150,21 @@ namespace app
 
         constexpr static std::array vertices
         {
-            Vertex{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
-            Vertex{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
-            Vertex{{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
-            Vertex{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+            Vertex{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+            Vertex{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+            Vertex{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+            Vertex{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+
+            Vertex{{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+            Vertex{{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+            Vertex{{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+            Vertex{{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
         };
 
-        constexpr static std::array<std::uint16_t, 6> indices
+        constexpr static std::array<std::uint16_t, 12> indices
         {
-            0, 1, 2, 2, 3, 0
+            0, 1, 2, 2, 3, 0,
+            4, 5, 6, 6, 7, 4
         };
 
         #ifdef NDEBUG

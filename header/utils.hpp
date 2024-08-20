@@ -28,7 +28,7 @@ namespace app
         static VkVertexInputBindingDescription binding_description();
         static std::array<VkVertexInputAttributeDescription, 3> attribute_description();
 
-        glm::vec2 position;
+        glm::vec3 position;
         glm::vec3 color;
         glm::vec2 textureCoordinate;
     };
