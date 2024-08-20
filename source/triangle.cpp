@@ -627,7 +627,7 @@ namespace app
 
         for(const auto i : std::views::iota(0ull, std::size(swapChainImages)))
         {
-            swapChainImageViews[i] = create_image_view(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
+            swapChainImageViews[i] = create_image_view(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
         }
     }
 
@@ -936,7 +936,7 @@ namespace app
         }
     }
     
-    void Triangle::create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+    void Triangle::create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                                 VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
     {
         VkImageCreateInfo imageCreateInfo{};
@@ -945,7 +945,7 @@ namespace app
         imageCreateInfo.extent.width = static_cast<std::uint32_t>(width);
         imageCreateInfo.extent.height = static_cast<std::uint32_t>(height);
         imageCreateInfo.extent.depth = 1;
-        imageCreateInfo.mipLevels = 1;
+        imageCreateInfo.mipLevels = mipLevels;
         imageCreateInfo.arrayLayers = 1;
         imageCreateInfo.format = format;
         imageCreateInfo.tiling = tiling;
@@ -979,9 +979,9 @@ namespace app
     void Triangle::create_depth_resources()
     {
         auto depthFormat{find_depth_format()};
-        create_image(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+        create_image(swapChainExtent.width, swapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-        depthImageView = create_image_view(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+        depthImageView = create_image_view(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
     VkFormat Triangle::find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
@@ -1032,6 +1032,8 @@ namespace app
             throw std::runtime_error{"Error: failed to load texture image."};
         }
 
+        mipLevels = static_cast<std::uint32_t>(std::floor(std::log2(std::max(texture.width, texture.height)))) + 1;
+
         VkBuffer stagingBuffer{};
         VkDeviceMemory stagingBufferMemory{};
         
@@ -1045,17 +1047,17 @@ namespace app
 
         stbi_image_free(pixels);
 
-        create_image(texture.width, texture.height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
+        create_image(texture.width, texture.height, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
                      VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
-        transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
         copy_buffer_to_image(stagingBuffer, textureImage, static_cast<std::uint32_t>(texture.width), static_cast<std::uint32_t>(texture.height));
-        transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, mipLevels);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
     
-    VkImageView Triangle::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
+    VkImageView Triangle::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, std::uint32_t mipLevels)
     {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1066,7 +1068,7 @@ namespace app
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount = 1;
+        viewInfo.subresourceRange.layerCount = mipLevels;
 
         VkImageView imageView{};
         if(vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
@@ -1079,7 +1081,7 @@ namespace app
 
     void Triangle::create_texture_image_view()
     {
-        textureImageView = create_image_view(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+        textureImageView = create_image_view(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
     }
     
     void Triangle::create_texture_sampler()
@@ -1339,7 +1341,7 @@ namespace app
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     }
 
-    void Triangle::transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+    void Triangle::transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::uint32_t mipLevels)
     {
         VkCommandBuffer commandBuffer{begin_single_time_commands()};
 
@@ -1352,7 +1354,7 @@ namespace app
         barrier.image = image;
         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         barrier.subresourceRange.baseMipLevel = 0;
-        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.levelCount = mipLevels;
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
         barrier.srcAccessMask = 0;
@@ -1644,4 +1646,64 @@ namespace app
             }
         }
     }  
+
+    void Triangle::generate_mip_maps(VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels)
+    {
+        VkCommandBuffer commandBuffer{begin_single_time_commands()};
+
+        VkImageMemoryBarrier barrier{};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.image = image;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.subresourceRange.levelCount = 1;
+
+        struct
+        {
+            std::int32_t width;
+            std::int32_t height;
+        } mipSize{width, height};
+
+        for(const auto i : std::views::iota(1u, mipLevels))
+        {
+            barrier.subresourceRange.baseMipLevel = i - 1;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+                                 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+            VkImageBlit blit{};
+            blit.srcOffsets[0] = {0, 0, 0};
+            blit.srcOffsets[1] = {mipSize.width, mipSize.height, 1};
+            blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.srcSubresource.mipLevel = i - 1;
+            blit.srcSubresource.baseArrayLayer = 0;
+            blit.srcSubresource.layerCount = 1;
+            blit.dstOffsets[0] = {0, 0, 0};
+            blit.dstOffsets[1] = {mipSize.width > 1 ? mipSize.width / 2 : 1, mipSize.height > 1 ? mipSize.height / 2 : 1, 1};
+            blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            blit.dstSubresource.mipLevel = i;
+            blit.dstSubresource.baseArrayLayer = 0;
+            blit.dstSubresource.layerCount = 1;
+
+            vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, 
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+                           barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 
+                                 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        }
+
+        end_single_time_commands(commandBuffer);
+    }
 }

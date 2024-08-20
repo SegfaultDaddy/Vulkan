@@ -66,19 +66,19 @@ namespace app
         void create_descriptor_pool();
         void create_descriptor_sets();
 
-        void create_image(std::uint32_t width, std::uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+        void create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat find_depth_format();
         bool has_stencil_component(VkFormat format);
         void create_depth_resources();
         void create_texture_image();
-        VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, std::uint32_t mipLevels);
         void create_texture_image_view();
         void create_texture_sampler();
         VkCommandBuffer begin_single_time_commands();
         void end_single_time_commands(VkCommandBuffer commandBuffer);
-        void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::uint32_t mipLevels);
         void copy_buffer_to_image(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height);
         void create_command_pool();
         void create_command_buffers();
@@ -89,6 +89,7 @@ namespace app
         void update_uniform_buffer(std::uint32_t currentImage);
 
         void load_model();
+        void generate_mip_maps(VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels);
 
         GLFWwindow* window;
 
@@ -135,6 +136,7 @@ namespace app
         VkDeviceMemory depthImageMemory;
         VkImageView depthImageView;
 
+        std::uint32_t mipLevels;
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
