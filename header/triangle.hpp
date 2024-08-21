@@ -77,8 +77,9 @@ namespace app
         void update_uniform_buffer(std::uint32_t currentImage);
         void load_model();
         void generate_mipmaps(VkImage image, VkFormat imageFormat, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels);
-
+        void create_color_resources();
         VkSampleCountFlagBits max_usable_sample_count();
+
         GLFWwindow* window;
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
