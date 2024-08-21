@@ -89,7 +89,7 @@ namespace app
         void update_uniform_buffer(std::uint32_t currentImage);
 
         void load_model();
-        void generate_mip_maps(VkImage image, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels);
+        void generate_mipmaps(VkImage image, VkFormat imageFormat, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels);
 
         GLFWwindow* window;
 
