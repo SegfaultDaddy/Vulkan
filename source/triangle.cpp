@@ -45,6 +45,7 @@ namespace app
         create_descriptor_set_layout();
         create_graphics_pipeline();
         create_command_pool();
+        create_color_resources();
         create_depth_resources();
         create_frame_buffers();
         create_texture_image();
@@ -937,7 +938,7 @@ namespace app
         }
     }
     
-    void Triangle::create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+    void Triangle::create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                                 VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
     {
         VkImageCreateInfo imageCreateInfo{};
@@ -952,7 +953,7 @@ namespace app
         imageCreateInfo.tiling = tiling;
         imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageCreateInfo.usage = usage;
-        imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageCreateInfo.samples = numSamples;
         imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageCreateInfo.flags = 0;
 
@@ -980,7 +981,7 @@ namespace app
     void Triangle::create_depth_resources()
     {
         auto depthFormat{find_depth_format()};
-        create_image(swapChainExtent.width, swapChainExtent.height, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
+        create_image(swapChainExtent.width, swapChainExtent.height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
                      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
         depthImageView = create_image_view(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
@@ -1048,7 +1049,7 @@ namespace app
 
         stbi_image_free(pixels);
 
-        create_image(texture.width, texture.height, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
+        create_image(texture.width, texture.height, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | 
                      VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory);
         transition_image_layout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
         copy_buffer_to_image(stagingBuffer, textureImage, static_cast<std::uint32_t>(texture.width), static_cast<std::uint32_t>(texture.height));
@@ -1770,5 +1771,15 @@ namespace app
             return VK_SAMPLE_COUNT_2_BIT;
         }
         return VK_SAMPLE_COUNT_1_BIT;
+    }
+
+    void Triangle::create_color_resources()
+    {
+        VkFormat colorFormat{swapChainImageFormat};
+
+        create_image(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, colorFormat, VK_IMAGE_TILING_OPTIMAL,
+                     VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+                     colorImage, colorImageMemory);
+        colorImageView = create_image_view(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 }

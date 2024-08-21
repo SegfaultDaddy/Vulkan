@@ -55,7 +55,7 @@ namespace app
         void create_uniform_buffers();
         void create_descriptor_pool();
         void create_descriptor_sets();
-        void create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+        void create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                           VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
         VkFormat find_depth_format();
@@ -77,20 +77,16 @@ namespace app
         void update_uniform_buffer(std::uint32_t currentImage);
         void load_model();
         void generate_mipmaps(VkImage image, VkFormat imageFormat, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels);
+
         VkSampleCountFlagBits max_usable_sample_count();
-
         GLFWwindow* window;
-
         VkInstance instance;
         VkDebugUtilsMessengerEXT debugMessenger;
         VkSurfaceKHR surface;
-        
         VkPhysicalDevice physicalDevice;
         VkDevice device;
-
         VkQueue graphicsQueue;
         VkQueue presentQueue;
-
         VkSwapchainKHR swapChain;
         std::vector<VkImage> swapChainImages;
         VkFormat swapChainImageFormat;
@@ -101,48 +97,39 @@ namespace app
         VkPipelineLayout pipelineLayout;
         VkPipeline graphicsPipeline;
         std::vector<VkFramebuffer> swapChainFrameBuffers;
-
         std::vector<Vertex> vertices;
         std::vector<std::uint32_t> indices;
-
         VkBuffer vertexBuffer;
         VkDeviceMemory vertexBufferMemory;
         VkBuffer indexBuffer;
         VkDeviceMemory indexBufferMemory;
-
         std::vector<VkBuffer> uniformBuffers;
         std::vector<VkDeviceMemory> uniformBuffersMemory;
         std::vector<void*> uniformBuffersMapped;
-        
         VkDescriptorPool descriptorPool;
         std::vector<VkDescriptorSet> descriptorSets;
-
         VkCommandPool commandPool;
         std::vector<VkCommandBuffer> commandBuffers;
-
         VkImage depthImage;
         VkDeviceMemory depthImageMemory;
         VkImageView depthImageView;
-
         std::uint32_t mipLevels;
         VkImage textureImage;
         VkDeviceMemory textureImageMemory;
         VkImageView textureImageView;
-
         VkSampler textureSampler;
         VkSampleCountFlagBits msaaSamples;
-
+        VkImage colorImage;
+        VkDeviceMemory colorImageMemory;
+        VkImageView colorImageView;
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;
         std::vector<VkFence> inFlightFences;
-
-        bool framebufferResized;
-
         std::uint32_t currentFrame;
+        bool framebufferResized;
 
         constexpr static std::string_view name{"Vulkan Triangle"};
         constexpr static std::int32_t maxFramesInFlight{2};
-
         constexpr static std::string_view modelPath{"../model/viking_room.obj"};
         constexpr static std::string_view texturePath{"../texture/viking_room.png"};
 
