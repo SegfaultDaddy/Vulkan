@@ -8,11 +8,11 @@
 
 namespace app
 {
-    class Triangle final
+    class System final
     {
     public:
-        Triangle(const std::uint32_t width, const std::uint32_t height);
-        ~Triangle();
+        System(const std::uint32_t width, const std::uint32_t height);
+        ~System();
         void run();
     private:
         void create_instance();

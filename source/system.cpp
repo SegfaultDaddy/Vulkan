@@ -7,10 +7,6 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_vulkan.h>
-
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
@@ -23,13 +19,13 @@
 #include <tiny_obj_loader.h>
 
 #include "file.hpp"
-#include "triangle.hpp"
+#include "system.hpp"
 
 #undef max
 
 namespace app
 {
-    Triangle::Triangle(const std::uint32_t width, const std::uint32_t height)
+    System::System(const std::uint32_t width, const std::uint32_t height)
         : physicalDevice{VK_NULL_HANDLE}, currentFrame{0}
         , framebufferResized{false}, msaaSamples{VK_SAMPLE_COUNT_1_BIT}
     {
@@ -62,7 +58,7 @@ namespace app
         create_sync_objects();
     }
     
-    Triangle::~Triangle()
+    System::~System()
     {
         cleanup_swap_chain();
 
@@ -113,7 +109,7 @@ namespace app
         glfwTerminate();
     }
 
-    void Triangle::run()
+    void System::run()
     {
         while(!glfwWindowShouldClose(window))
         {
@@ -124,7 +120,7 @@ namespace app
         vkDeviceWaitIdle(device);
     }  
 
-    void Triangle::create_window(const std::uint32_t width, const std::uint32_t height, const std::string_view name)
+    void System::create_window(const std::uint32_t width, const std::uint32_t height, const std::string_view name)
     {
         glfwInit();
 
@@ -136,7 +132,7 @@ namespace app
         
     }
 
-    void Triangle::create_instance()
+    void System::create_instance()
     {
         if(enableValidationLayers && !check_validation_layer_support())
         {
@@ -183,7 +179,7 @@ namespace app
         }
     }
 
-    void Triangle::show_extensions_support() const
+    void System::show_extensions_support() const
     {
         std::uint32_t extensionCount{0};
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -198,7 +194,7 @@ namespace app
         }
     }
 
-    bool Triangle::check_validation_layer_support() const
+    bool System::check_validation_layer_support() const
     {
         std::uint32_t layersCount{0};
         vkEnumerateInstanceLayerProperties(&layersCount, nullptr);
@@ -226,7 +222,7 @@ namespace app
         return true;
     }
 
-    std::vector<const char*> Triangle::required_extensions() const
+    std::vector<const char*> System::required_extensions() const
     {
         std::uint32_t glfwExtensionCount{0};
         const char** glfwExtensions{glfwGetRequiredInstanceExtensions(&glfwExtensionCount)};
@@ -240,7 +236,7 @@ namespace app
         return extensions;
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL Triangle::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+    VKAPI_ATTR VkBool32 VKAPI_CALL System::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
                                                             VkDebugUtilsMessageSeverityFlagsEXT messageType,
                                                             const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                                             void* userData)
@@ -252,7 +248,7 @@ namespace app
         return VK_FALSE;
     }
 
-    void Triangle::setup_debug_messages()
+    void System::setup_debug_messages()
     {
         if(!enableValidationLayers)
         {
@@ -268,7 +264,7 @@ namespace app
         }
     }
 
-    void Triangle::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    void System::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -282,7 +278,7 @@ namespace app
         createInfo.pUserData = nullptr;
     }
 
-    void Triangle::pick_physical_device()
+    void System::pick_physical_device()
     {
         std::uint32_t deviceCount{0};
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
@@ -311,7 +307,7 @@ namespace app
         }
     }
 
-    bool Triangle::check_device_extension_support(VkPhysicalDevice device)
+    bool System::check_device_extension_support(VkPhysicalDevice device)
     {
         std::uint32_t extensionCount{0};
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -327,7 +323,7 @@ namespace app
         return std::empty(requiredExtensions);
     }
 
-    bool Triangle::is_device_suitable(VkPhysicalDevice device)
+    bool System::is_device_suitable(VkPhysicalDevice device)
     {
         VkPhysicalDeviceProperties deviceProperties{};
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -356,7 +352,7 @@ namespace app
                supportedFeatures.samplerAnisotropy;
     }
 
-    QueueFamilyIndices Triangle::find_queue_families(VkPhysicalDevice device)
+    QueueFamilyIndices System::find_queue_families(VkPhysicalDevice device)
     {
         QueueFamilyIndices indices{};
 
@@ -389,7 +385,7 @@ namespace app
         return indices;
     }
 
-    void Triangle::create_logical_device()
+    void System::create_logical_device()
     {
         auto indices{find_queue_families(physicalDevice)};
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
@@ -438,7 +434,7 @@ namespace app
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
 
-    void Triangle::create_surface()
+    void System::create_surface()
     {
         if(glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
         {
@@ -446,7 +442,7 @@ namespace app
         }
     }
 
-    VkSurfaceFormatKHR Triangle::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
+    VkSurfaceFormatKHR System::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& availableFormats) const
     {
         for(const auto& availableFormat : availableFormats)
         {
@@ -459,7 +455,7 @@ namespace app
         return availableFormats[0];
     }
     
-    VkPresentModeKHR Triangle::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const
+    VkPresentModeKHR System::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& availablePresentModes) const
     {
         for(const auto& availablePresentMode : availablePresentModes)
         {
@@ -472,7 +468,7 @@ namespace app
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D Triangle::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const
+    VkExtent2D System::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) const
     {
         if(capabilities.currentExtent.width != std::numeric_limits<std::uint32_t>::max())
         {
@@ -494,7 +490,7 @@ namespace app
         return actualExtent;
     }
 
-    SwapChainSupportDetails Triangle::query_swap_chain_support(VkPhysicalDevice device)
+    SwapChainSupportDetails System::query_swap_chain_support(VkPhysicalDevice device)
     {
         SwapChainSupportDetails details{};
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
@@ -520,7 +516,7 @@ namespace app
         return details;
     }
 
-    void Triangle::create_swap_chain()
+    void System::create_swap_chain()
     {
         auto swapChainSupport{query_swap_chain_support(physicalDevice)};
 
@@ -578,7 +574,7 @@ namespace app
         swapChainExtent = extent;
     }
 
-    void Triangle::cleanup_swap_chain()
+    void System::cleanup_swap_chain()
     {
         vkDestroyImageView(device, colorImageView, nullptr);
         vkDestroyImage(device, colorImage, nullptr);
@@ -601,7 +597,7 @@ namespace app
         vkDestroySwapchainKHR(device, swapChain, nullptr);
     }
 
-    void Triangle::recreate_swap_chain()
+    void System::recreate_swap_chain()
     {
         struct         
         {
@@ -627,7 +623,7 @@ namespace app
         create_frame_buffers();
     }
 
-    void Triangle::create_image_views()
+    void System::create_image_views()
     {
         swapChainImageViews.resize(std::size(swapChainImages));
 
@@ -637,7 +633,7 @@ namespace app
         }
     }
 
-    void Triangle::create_descriptor_set_layout()
+    void System::create_descriptor_set_layout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
@@ -665,7 +661,7 @@ namespace app
         }
     }
 
-    void Triangle::create_graphics_pipeline()
+    void System::create_graphics_pipeline()
     {
         auto vertexShaderCode{file::read_file("../shader/vert.spv")};
         auto fragmentShaderCode{file::read_file("../shader/frag.spv")};
@@ -825,7 +821,7 @@ namespace app
         vkDestroyShaderModule(device, fragmentShaderModule, nullptr);
     }
 
-    VkShaderModule Triangle::create_shader_module(const std::vector<char>& code)
+    VkShaderModule System::create_shader_module(const std::vector<char>& code)
     {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -842,7 +838,7 @@ namespace app
         return shaderModule;
     }
 
-    void Triangle::create_render_pass()
+    void System::create_render_pass()
     {
         VkAttachmentDescription colorAttachment{};
         colorAttachment.format = swapChainImageFormat;
@@ -920,7 +916,7 @@ namespace app
         }
     }
 
-    void Triangle::create_frame_buffers()
+    void System::create_frame_buffers()
     {
         swapChainFrameBuffers.resize(std::size(swapChainImageViews));
         for(const auto i : std::views::iota(0ull, std::size(swapChainImageViews)))
@@ -943,7 +939,7 @@ namespace app
         }
     }
 
-    void Triangle::create_command_pool()
+    void System::create_command_pool()
     {
         auto queueFamilyIndices{find_queue_families(physicalDevice)};
 
@@ -958,7 +954,7 @@ namespace app
         }
     }
     
-    void Triangle::create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+    void System::create_image(std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
                                 VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
     {
         VkImageCreateInfo imageCreateInfo{};
@@ -998,7 +994,7 @@ namespace app
         vkBindImageMemory(device, image, imageMemory, 0);
     }
 
-    void Triangle::create_depth_resources()
+    void System::create_depth_resources()
     {
         auto depthFormat{find_depth_format()};
         create_image(swapChainExtent.width, swapChainExtent.height, 1, msaaSamples, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 
@@ -1006,7 +1002,7 @@ namespace app
         depthImageView = create_image_view(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 
-    VkFormat Triangle::find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+    VkFormat System::find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
     {
         for(auto format : candidates)
         {
@@ -1027,18 +1023,18 @@ namespace app
         return {};
     }
 
-    VkFormat Triangle::find_depth_format()
+    VkFormat System::find_depth_format()
     {
         return find_supported_format({VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT}, 
                                       VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 
-    bool Triangle::has_stencil_component(VkFormat format)
+    bool System::has_stencil_component(VkFormat format)
     {
         return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
     }
 
-    void Triangle::create_texture_image()
+    void System::create_texture_image()
     {
         struct 
         {
@@ -1081,7 +1077,7 @@ namespace app
         generate_mipmaps(textureImage, VK_FORMAT_R8G8B8A8_SRGB, texture.width, texture.height, mipLevels);
     }
     
-    VkImageView Triangle::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, std::uint32_t mipLevels)
+    VkImageView System::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, std::uint32_t mipLevels)
     {
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -1103,12 +1099,12 @@ namespace app
         return imageView;
     }
 
-    void Triangle::create_texture_image_view()
+    void System::create_texture_image_view()
     {
         textureImageView = create_image_view(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
     }
     
-    void Triangle::create_texture_sampler()
+    void System::create_texture_sampler()
     {
         VkPhysicalDeviceProperties properties{};
         vkGetPhysicalDeviceProperties(physicalDevice, &properties);
@@ -1137,7 +1133,7 @@ namespace app
         }
     }
 
-    void Triangle::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
+    void System::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, 
                                  VkBuffer& buffer, VkDeviceMemory& bufferMemory)
     {
         VkBufferCreateInfo bufferCreateInfo{};
@@ -1167,7 +1163,7 @@ namespace app
         vkBindBufferMemory(device, buffer, bufferMemory, 0);
     }
 
-    void Triangle::create_vertex_buffer()
+    void System::create_vertex_buffer()
     {
         VkDeviceSize bufferSize{sizeof(vertices[0]) * std::size(vertices)};
 
@@ -1190,7 +1186,7 @@ namespace app
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
-    void Triangle::create_index_buffer()
+    void System::create_index_buffer()
     {
         VkDeviceSize bufferSize{sizeof(indices[0]) * std::size(indices)};
 
@@ -1213,7 +1209,7 @@ namespace app
         vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
 
-    std::uint32_t Triangle::find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    std::uint32_t System::find_memory_type(std::uint32_t typeFilter, VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memoryProperties{};
         vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
@@ -1231,7 +1227,7 @@ namespace app
         return {};
     }
 
-    void Triangle::copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    void System::copy_buffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
         VkCommandBuffer commandBuffer{begin_single_time_commands()};
 
@@ -1244,7 +1240,7 @@ namespace app
         end_single_time_commands(commandBuffer);
     }
 
-    void Triangle::create_uniform_buffers()
+    void System::create_uniform_buffers()
     {
         VkDeviceSize bufferSize{sizeof(UniformBufferObject)};
 
@@ -1260,7 +1256,7 @@ namespace app
         }
     }
 
-    void Triangle::create_descriptor_pool()
+    void System::create_descriptor_pool()
     {
         std::array<VkDescriptorPoolSize, 2> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1281,7 +1277,7 @@ namespace app
         }
     }
 
-    void Triangle::create_descriptor_sets()
+    void System::create_descriptor_sets()
     {
         std::vector<VkDescriptorSetLayout> layouts(maxFramesInFlight, descriptorSetLayout);
         VkDescriptorSetAllocateInfo allocateInfo{};
@@ -1329,7 +1325,7 @@ namespace app
         }
     }
 
-    VkCommandBuffer Triangle::begin_single_time_commands()
+    VkCommandBuffer System::begin_single_time_commands()
     {
         VkCommandBufferAllocateInfo allocateInfo{};
         allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1348,7 +1344,7 @@ namespace app
         return commandBuffer;
     }
 
-    void Triangle::end_single_time_commands(VkCommandBuffer commandBuffer)
+    void System::end_single_time_commands(VkCommandBuffer commandBuffer)
     {
         vkEndCommandBuffer(commandBuffer);
 
@@ -1363,7 +1359,7 @@ namespace app
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     }
 
-    void Triangle::transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::uint32_t mipLevels)
+    void System::transition_image_layout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, std::uint32_t mipLevels)
     {
         VkCommandBuffer commandBuffer{begin_single_time_commands()};
 
@@ -1412,7 +1408,7 @@ namespace app
         end_single_time_commands(commandBuffer);
     }
 
-    void Triangle::copy_buffer_to_image(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height)
+    void System::copy_buffer_to_image(VkBuffer buffer, VkImage image, std::uint32_t width, std::uint32_t height)
     {
         VkCommandBuffer commandBuffer{begin_single_time_commands()};
 
@@ -1432,7 +1428,7 @@ namespace app
         end_single_time_commands(commandBuffer);
     }
 
-    void Triangle::create_command_buffers()
+    void System::create_command_buffers()
     {
         commandBuffers.resize(maxFramesInFlight);
 
@@ -1448,7 +1444,7 @@ namespace app
         }
     }
 
-    void Triangle::record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex)
+    void System::record_command_buffer(VkCommandBuffer commandBuffer, std::uint32_t imageIndex)
     {
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1509,7 +1505,7 @@ namespace app
         }
     }
 
-    void Triangle::create_sync_objects()
+    void System::create_sync_objects()
     {
         imageAvailableSemaphores.resize(maxFramesInFlight);
         renderFinishedSemaphores.resize(maxFramesInFlight);
@@ -1533,7 +1529,7 @@ namespace app
         }
     }
 
-    void Triangle::draw_frame()
+    void System::draw_frame()
     {
         vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<std::uint64_t>::max());
 
@@ -1608,7 +1604,7 @@ namespace app
         currentFrame = (currentFrame + 1) % maxFramesInFlight;
     }
 
-    void Triangle::update_uniform_buffer(std::uint32_t currentImage)
+    void System::update_uniform_buffer(std::uint32_t currentImage)
     {
         static auto startTime{std::chrono::high_resolution_clock::now()};
 
@@ -1623,13 +1619,13 @@ namespace app
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }
 
-    void Triangle::framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height)
+    void System::framebuffer_resize_callback(GLFWwindow* window, std::int32_t width, std::int32_t height)
     {
-        auto appliacation{reinterpret_cast<Triangle*>(glfwGetWindowUserPointer(window))};
+        auto appliacation{reinterpret_cast<System*>(glfwGetWindowUserPointer(window))};
         appliacation->framebufferResized = true;
     }
     
-    void Triangle::load_model()
+    void System::load_model()
     {
         tinyobj::attrib_t attribute{};
         std::vector<tinyobj::shape_t> shapes{};
@@ -1669,7 +1665,7 @@ namespace app
         }
     }  
 
-    void Triangle::generate_mipmaps(VkImage image, VkFormat imageFormat, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels)
+    void System::generate_mipmaps(VkImage image, VkFormat imageFormat, std::uint32_t width, std::uint32_t height, std::uint32_t mipLevels)
     {
         VkFormatProperties formatProperties{};
         vkGetPhysicalDeviceFormatProperties(physicalDevice, imageFormat, &formatProperties);
@@ -1759,7 +1755,7 @@ namespace app
         end_single_time_commands(commandBuffer);
     }
     
-    VkSampleCountFlagBits Triangle::max_usable_sample_count()
+    VkSampleCountFlagBits System::max_usable_sample_count()
     {
         VkPhysicalDeviceProperties physicalDevicePropeties{};
         vkGetPhysicalDeviceProperties(physicalDevice, &physicalDevicePropeties);
@@ -1793,7 +1789,7 @@ namespace app
         return VK_SAMPLE_COUNT_1_BIT;
     }
 
-    void Triangle::create_color_resources()
+    void System::create_color_resources()
     {
         VkFormat colorFormat{swapChainImageFormat};
 
